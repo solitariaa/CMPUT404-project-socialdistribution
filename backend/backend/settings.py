@@ -35,7 +35,6 @@ ALLOWED_HOSTS = [urlparse(DOMAIN).netloc.split(":")[0]]
 # Application definition
 
 INSTALLED_APPS = [
-    'inbox.apps.InboxConfig',
     'authors.apps.AuthorsConfig',
     'posts.apps.PostsConfig',
     'django.contrib.admin',
@@ -75,8 +74,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 CORS_ORIGIN_WHITELIST = [
-     'http://127.0.0.1:3000',
-     'http://localhost:3000',
+     'http://localhost:3000'
 ]
 
 ROOT_URLCONF = 'backend.urls'

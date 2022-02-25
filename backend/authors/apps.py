@@ -7,3 +7,4 @@ class AuthorsConfig(AppConfig):
 
     def ready(self):
         import authors.receivers
+
