@@ -4,9 +4,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from serializers import CommentSerializer
+from .serializers import CommentSerializer
 from posts.models import Post
-from models import Comment
+from .models import Comment
 
 class CommentPagination(PageNumberPagination):
     page_size_query_param = 'size'
