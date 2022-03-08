@@ -14,14 +14,20 @@ import Box from '@mui/material/Box';
 import CommentIcon from '@mui/icons-material/Comment';
 import Grid from '@mui/material/Grid';
 import CommentCard from '../comment/CommentCard';
-import { getComments } from '../../../services/comments';
+import { getComments } from '../../../Services/comments';
 import EditPostDialog from './EditPostDialog';
 import DeletePostDialog from './DeletePostDialog';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import EditIMGDialog from "./EditIMGDialog"
-import AddComments from "../comment/addComment"
+import AddCommentsDialog from "../comment/addCommentDialog"
+import Button from '@mui/material/Button';
+import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
+
+const AvatarContainer = styled('div')({display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "125px"});
+
+const PostImage = styled('img')({width: "100%"})
 
 /* 
  * Takes the date formatted according to the ISO standard and returns the date formatted in the form "March 9, 2016 - 6:07 AM"
@@ -78,6 +84,7 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
   const [editOpen, setEditOpen] = React.useState(false);
   const closeEditDialog = () => setEditOpen(false);
   const openEditDialog = () => setEditOpen(true);
+
   /* State Hook For Opening Edit IMG Post Dialog */
   const [editIMGOpen, setEditIMGOpen] = React.useState(false);
   const closeEditIMGDialog = () => setEditIMGOpen(false);
@@ -98,10 +105,16 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
   const [imgShow, setImgShow] = React.useState(false);
 
   /* State Hook For Showing IMG/Text Post */
+  const [markdownShow, setMarkdownShow] = React.useState(false);
+
+  /* State Hook For Showing IMG/Text Post */
   const [textShow, setTextShow] = React.useState(false);
 
   /* State Hook For Menu (edit/remove) */
   const [anchorEl, setAnchorEl] = React.useState(false);
+
+  /* State Hook For Adding comment*/
+  const [addCMOpen, setaddCMOpen] = React.useState(false);
 
   /* Hook handler For Menu (edit/remove) */
   const handleClick = (event) => {
@@ -115,19 +128,25 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
     setColor("secondary")
   };
 
+  const handleAddCMClickOpen = () => {
+    setaddCMOpen(true);
+  };
+
+  const handleAddCMClose = () => {
+    setaddCMOpen(false);
+  };
+
    /* Set visible condition for IMG/Text Post */
   React.useEffect(()=>{
-    if (post.content.includes("data:")){
-      setImgShow(true)
-      setTextShow(false)
-    }else{
-      setImgShow(false)
-      setTextShow(true)
+    if (post.contentType.includes("image")){
+      setImgShow(true);
+    } else if (post.contentType === "text/markdown") {
+      setMarkdownShow(true);
+    } else {
+      setTextShow(true);
     }
 }, [post])
 
-
-  
   /* This Runs When The Button To Show Comments Is Clicked */
   const handleExpandClick = () => {
     getComments("dummy_author", "dummy_post")
@@ -138,11 +157,15 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
       .catch( err => console.log(err) );
   };
 
-
   return (
     <Card sx={{m: "1px"}}>
       <CardHeader
-        avatar={ <Avatar src={post.author.profileImage} sx={{ width: 64, height: 64,  }} aria-label="recipe" />}
+        avatar={ 
+          <AvatarContainer onClick={() => console.log(post.author.id)} >
+            <Avatar src={post.author.profileImage} sx={{ width: 64, height: 64,  }} aria-label="recipe" />
+            <Typography variant="caption" display="block" gutterBottom sx={{paddingTop: "5px"}}>{post.author.displayName}</Typography>
+          </AvatarContainer>
+        }
         title={<Typography variant='h6'>{post.title}</Typography>}
         action={
           <IconButton aria-label="settings" onClick={handleClick}>
@@ -159,20 +182,25 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
         disableTypography={true}
       />
       <CardContent>
-        {textShow&&<Box sx={{width: "100%", px: "80px"}}>
-          <Typography paragraph>
-            {post.content}
-          </Typography>
+        {(post.contentType === "text/plain")&&<Box sx={{width: "100%", px: "20px"}}>
+          {post.content.split("\n").map((p, index) => <Typography key={index} paragraph> {p} </Typography>)}
         </Box>}
-        {imgShow &&<Box sx={{width: "100%"}}>
+        {(post.contentType === "text/markdown")&&<Box sx={{width: "100%", px: "20px"}}>
+          <ReactMarkdown components={{img: PostImage}}>{post.content}</ReactMarkdown>
+        </Box>}
+        {post.contentType.includes("image")&&<Box sx={{width: "100%", px: "20px"}}>
           <img src={post.content} width="100%" alt={post.title}/>
         </Box>}
       </CardContent>
       <CardButtons isOwner={isOwner} handleColor={handleColor} expanded={expanded} handleExpandClick={handleExpandClick} color={color} />
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <CardContent>
-          <AddComments></AddComments>
-          {comments.map((commentData) => ( <Grid item xs={12}> <CommentCard commentData={commentData} fullWidth /> </Grid>))}
+          {comments.map((commentData) => ( <Grid item xs={12}> <CommentCard commentData={commentData} alertSuccess={alertSuccess} alertError={alertError} fullWidth /> </Grid>))}
+          <Grid item xs={12} sx={{marginTop: "8px"}}>
+            <Card fullwidth sx={{maxHeight: 200, mt:"1%"}}>
+            <Button disableElevation={false} sx={{minHeight: "100px", fontSize: "1.15rem"}}  onClick={handleAddCMClickOpen} fullWidth>Add Comment</Button>
+            </Card>
+          </Grid>
         </CardContent>
       </Collapse>
         <Menu
@@ -184,13 +212,14 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
           'aria-labelledby': 'basic-button',
         }}
         >
-          {textShow&&<MenuItem onClick={openEditDialog}>Edit</MenuItem>}
-          {imgShow &&<MenuItem onClick={openEditIMGDialog}>Edit</MenuItem>}
+          {((post.contentType === "text/markdown") || (post.contentType === "text/plain"))&&<MenuItem onClick={openEditDialog}>Edit</MenuItem>}
+          {post.contentType.includes("image")&&<MenuItem onClick={openEditIMGDialog}>Edit</MenuItem>}
           <MenuItem onClick={openDeleteDialog}>Remove Post</MenuItem>
         </Menu>
       <DeletePostDialog post={post} alertSuccess={alertSuccess} alertError={alertError} open={deleteOpen} handleClose={closeDeleteDialog} removeFromFeed={removeFromFeed} />
       <EditPostDialog post={post} open={editOpen} onClose={closeEditDialog} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} />
       <EditIMGDialog post={post} open={editIMGOpen} onClose={closeEditIMGDialog} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} />
+      <AddCommentsDialog open={addCMOpen} handleAddCMClose={handleAddCMClose} author={post.author} alertSuccess={alertSuccess} alertError={alertError}></AddCommentsDialog>
     </Card>
   );
 }

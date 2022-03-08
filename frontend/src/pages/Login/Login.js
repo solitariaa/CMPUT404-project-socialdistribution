@@ -13,6 +13,8 @@ import { set } from 'lodash/fp';
 import { useNavigate } from 'react-router-dom';
 import {  useDispatch } from 'react-redux';
 import { login } from '../../redux/profileSlice';
+import { setInbox } from '../../redux/inboxSlice';
+import { getInbox } from '../../Services/posts';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 function Copyright(props) {
@@ -35,16 +37,28 @@ export default function LoginPage() {
 
   const dispatch = useDispatch();
 
+  /* Callback For Logging In The User */
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+
+    /* Authenticate */
     if (data.get("password") && data.get("displayName")) {
       axios.post("/api/authors/login/", data)
         .then((res) => {
+
+            /* Set User Credentials */
             dispatch(login(res.data.author));
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("author",res.data.author);
-            goToHome()
+
+            /* Fetch Inbox */
+            getInbox(res.data.author.url)
+                .then( res2 => {
+                  dispatch(setInbox(res2.data.items));
+                  goToHome();
+                })
+                .catch( err => console.log(err) )
         })
         .catch( err => showError(err.response.data.error ? err.response.data.error : "Error Logging In!") );
     } else {
@@ -92,7 +106,7 @@ export default function LoginPage() {
           <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} > Sign In </Button>
           <Grid container justifyContent="center">
             <Grid item>
-              <Link href="/register" variant="body2"> New user? Create an account </Link>
+              <Link href="#/register" variant="body2"> New user? Create an account </Link>
             </Grid>
           </Grid>
         </Box>
