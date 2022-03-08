@@ -11,10 +11,10 @@ import Typography from '@mui/material/Typography';
 import axios from 'axios';
 import { set } from 'lodash/fp';
 import { useNavigate } from 'react-router-dom';
-import {  useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { login } from '../../redux/profileSlice';
 import { setInbox } from '../../redux/inboxSlice';
-import { getInbox } from '../../Services/posts';
+import { getInbox } from '../../services/posts';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 function Copyright(props) {
@@ -31,8 +31,8 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const goToHome = () => navigate("/")
 
-  const [openAlert, setOpenAlert] = React.useState({isOpen: false, message: "", severity: "error"})
-  const showError = msg => setOpenAlert({isOpen: true, message: msg, severity: "error"})
+  const [openAlert, setOpenAlert] = React.useState({ isOpen: false, message: "", severity: "error" })
+  const showError = msg => setOpenAlert({ isOpen: true, message: msg, severity: "error" })
   const handleCloseAlert = () => setOpenAlert(set('isOpen', false, openAlert));
 
   const dispatch = useDispatch();
@@ -47,30 +47,30 @@ export default function LoginPage() {
       axios.post("/api/authors/login/", data)
         .then((res) => {
 
-            /* Set User Credentials */
-            dispatch(login(res.data.author));
-            localStorage.setItem("token", res.data.token);
-            localStorage.setItem("author",res.data.author);
+          /* Set User Credentials */
+          dispatch(login(res.data.author));
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem("author", res.data.author);
 
-            /* Fetch Inbox */
-            getInbox(res.data.author.url)
-                .then( res2 => {
-                  dispatch(setInbox(res2.data.items));
-                  goToHome();
-                })
-                .catch( err => console.log(err) )
+          /* Fetch Inbox */
+          getInbox(res.data.author.url)
+            .then(res2 => {
+              dispatch(setInbox(res2.data.items));
+              goToHome();
+            })
+            .catch(err => console.log(err))
         })
-        .catch( err => showError(err.response.data.error ? err.response.data.error : "Error Logging In!") );
+        .catch(err => showError(err.response.data.error ? err.response.data.error : "Error Logging In!"));
     } else {
       showError("Username And Password Required!")
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: "center", height: "100vh"}}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: "center", height: "100vh" }}>
       <Snackbar
-        sx={{width: "60%", pt:6}} spacing={2}
-        anchorOrigin={{horizontal: "center", vertical: "top"}}
+        sx={{ width: "60%", pt: 6 }} spacing={2}
+        anchorOrigin={{ horizontal: "center", vertical: "top" }}
         open={openAlert.isOpen}
         autoHideDuration={2500}
         onClose={handleCloseAlert}>
@@ -111,8 +111,8 @@ export default function LoginPage() {
           </Grid>
         </Box>
       </Box>
-      <span style={{position: "absolute", bottom: "35px"}}>
-        <Copyright sx={{marginTop: "100px"}} />
+      <span style={{ position: "absolute", bottom: "35px" }}>
+        <Copyright sx={{ marginTop: "100px" }} />
       </span>
     </div>
   );

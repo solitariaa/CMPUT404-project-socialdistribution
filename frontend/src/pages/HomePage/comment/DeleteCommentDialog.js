@@ -5,10 +5,10 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import { deleteComments } from '../../../Services/comments';
+import { deleteComments } from '../../../services/comments';
 
-export default function DeletePostDialog({commentData, alertSuccess, alertError, open, handleClose}) {
-    
+export default function DeletePostDialog({ commentData, alertSuccess, alertError, open, handleClose }) {
+
   const onDelete = () => {
     // deleteComments(post.id)
     //   .then( _ => {
@@ -22,17 +22,17 @@ export default function DeletePostDialog({commentData, alertSuccess, alertError,
     //     handleClose();
     //   } );
   }
-    
+
   return (
-      <Dialog open={open} onClose={handleClose} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description" >
-        <DialogTitle id="delete-comment-title">Delete Comment</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-comment-content">Are you sure you want to delete this comment?</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={onDelete}>Delete</Button>
-        </DialogActions>
-      </Dialog>
+    <Dialog open={open} onClose={handleClose} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description" >
+      <DialogTitle id="delete-comment-title">Delete Comment</DialogTitle>
+      <DialogContent>
+        <DialogContentText id="delete-comment-content">Are you sure you want to delete this comment?</DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={onDelete}>Delete</Button>
+      </DialogActions>
+    </Dialog>
   );
 }

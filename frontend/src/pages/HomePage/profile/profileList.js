@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ListItemButton, Avatar, ListItemText, ListItemAvatar, Collapse, Divider, List, ListItemIcon } from '@mui/material';
+import { ListItemButton, Avatar, ListItemText, ListItemAvatar, Collapse, Divider, List, ListItemIcon, Typography } from '@mui/material';
 import ProfileListItem from './profileListItem';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -24,7 +24,13 @@ export default function ProfileList(props) {
     const style = {
         title: {
             pl: 2,
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            justifyContent: 'center',
+            alignItems: 'center'
+        },
+        count: {
+            display: 'inline',
+            ml: 1,
         },
         listHeader: {
             // background: '#f5f5f5'
@@ -36,7 +42,9 @@ export default function ProfileList(props) {
 
     return (
         <List>
-            <ListItemText sx={style.title}>{props.title}</ListItemText>
+            <ListItemText sx={style.title}>{props.title}
+                <Typography sx={style.count}>{props.profiles.length}</Typography>
+            </ListItemText>
             {props.profiles.slice(0, showingCount).map((profile, index) => (
                 <ProfileListItem key={index} displayName={profile.userName} profileImage={profile.profileImage} />))}
 

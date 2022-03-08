@@ -53,45 +53,59 @@ export default function ProfileEditModal(props) {
     const handleSubmit = (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
+        const imageChanged = (image !== null);
+
+        if (!imageChanged) {
+            const newData = {
+                github: data.get('github'),
+                profileImage: profileImage,
+            };
+            axios.patch(`/api/authors/${userID}/`, newData).then((res) => {
+                dispatch(profileEdit(res.data));
+                props.alertSuccess('Profile information saved!');
+                cleanup();
+                props.onClose();
+            })
+                .catch(err => console.log(err.response.data.error));
+            return;
+        };
+
+        /* image changed */
         const img = data.get('img');
-        console.log('data: ' + JSON.stringify(img));
-        const newData = { github: data.get('github') };
-        axios.patch(`/api/authors/${userID}/`, newData).then((res) => {
-            dispatch(profileEdit(res.data.github));
-            props.alertSuccess('Profile information saved!');
-            props.onClose();
+        /* Encode Image As Base64 */
+        const reader = new FileReader();
+        reader.readAsDataURL(img)
+        reader.onload = () => {
+            console.log(reader.result);
+            const newData = {
+                github: data.get('github'),
+                profileImage: reader.result ? reader.result : profileImage,
+            };
+            axios.patch(`/api/authors/${userID}/`, newData).then((res) => {
+                dispatch(profileEdit(res.data));
+                props.alertSuccess('Profile information saved!');
+                cleanup();
+                props.onClose();
 
-        })
-            .catch(err => console.log(err.response.data.error));
-
-    };
+            })
+                .catch(err => console.log(err.response.data.error));
+        }
+    }
 
     const [image, _setImage] = React.useState(null);
-    const inputFileRef = React.createRef(null);
+
+    const onImageChange = (event) => {
+        if (event.target.files && event.target.files[0]) {
+            _setImage(URL.createObjectURL(event.target.files[0]));
+        }
+    };
 
     const cleanup = () => {
-        URL.revokeObjectURL(image);
-        inputFileRef.current.value = null;
-    };
-
-    const setImage = (newImage) => {
-        if (image) {
-            cleanup();
-        }
-        _setImage(newImage);
-    };
-
-    const handleOnChange = (event) => {
-        const newImage = event.target?.files?.[0];
-
-        if (newImage) {
-            setImage(URL.createObjectURL(newImage));
-        }
+        _setImage(null);
     };
 
     const cancelChanges = () => {
         cleanup();
-        _setImage(profileImage)
         props.onClose();
     }
 
@@ -120,13 +134,12 @@ export default function ProfileEditModal(props) {
                         >
                             <Avatar alt={displayName} src={image ? image : profileImage} sx={style.avatar} />
                             <input
-                                ref={inputFileRef}
                                 accept='image/*'
                                 hidden
                                 type='file'
                                 id='profile-image-upload'
                                 name='img'
-                                onChange={handleOnChange}
+                                onChange={onImageChange}
                             />
                         </Badge></Grid>
 

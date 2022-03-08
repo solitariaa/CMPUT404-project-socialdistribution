@@ -28,7 +28,8 @@ export const profileSlice = createSlice({
       state.url = action.payload.url;
     },
     profileEdit: (state, action) => {
-      state.github = action.payload;
+      state.github = action.payload.github;
+      state.profileImage = action.payload.profileImage;
     }
   },
 })
