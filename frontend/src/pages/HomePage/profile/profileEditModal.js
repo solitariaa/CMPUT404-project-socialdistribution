@@ -6,7 +6,7 @@ import Avatar from '@mui/material/Avatar';
 import AddCircleSharpIcon from '@mui/icons-material/AddCircleSharp';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
-import { login } from '../../../redux/profileSlice';
+import { profileEdit } from '../../../redux/profileSlice';
 
 const style = {
     textField: { minWidth: '20rem' },
@@ -53,8 +53,15 @@ export default function ProfileEditModal(props) {
     const handleSubmit = (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
+        const img = data.get('img');
+        console.log('data: ' + JSON.stringify(img));
         const newData = { github: data.get('github') };
-        axios.patch(`/api/authors/${userID}/`, newData).then(console.log('profile changed successfully'))
+        axios.patch(`/api/authors/${userID}/`, newData).then((res) => {
+            dispatch(profileEdit(res.data.github));
+            props.alertSuccess('Profile information saved!');
+            props.onClose();
+
+        })
             .catch(err => console.log(err.response.data.error));
 
     };
@@ -118,6 +125,7 @@ export default function ProfileEditModal(props) {
                                 hidden
                                 type='file'
                                 id='profile-image-upload'
+                                name='img'
                                 onChange={handleOnChange}
                             />
                         </Badge></Grid>

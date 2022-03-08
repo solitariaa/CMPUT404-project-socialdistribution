@@ -3,7 +3,7 @@ import { ListItemButton, Avatar, ListItemText, ListItemAvatar } from '@mui/mater
 
 export default function ProfileListItem(props) {
     return (
-        <ListItemButton sx={{ pl: 4 }}>
+        <ListItemButton sx={{ pl: 3 }}>
             <ListItemAvatar>
                 <Avatar alt={props.displayName} src={props.profileImage} />
             </ListItemAvatar>
