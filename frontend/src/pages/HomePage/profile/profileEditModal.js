@@ -52,7 +52,6 @@ export default function ProfileEditModal(props) {
     const userID = useSelector(state => state.profile.id);
     const profileImage = useSelector(state => state.profile.profileImage);
     const github = useSelector(state => state.profile.github);
-    console.log ("github is :", github);
     const dispatch = useDispatch();
 
     const handleSubmit = (event) => {

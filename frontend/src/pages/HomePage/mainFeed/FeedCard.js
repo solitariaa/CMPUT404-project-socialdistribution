@@ -79,7 +79,7 @@ function CardButtons({isOwner, handleColor, expanded, handleExpandClick, handleL
 export default function FeedCard({allLikes, profile, post, isOwner, alertError, alertSuccess, updateFeed, removeFromFeed}) {
   /* State Hook For Expanding The Comments */
   const [expanded, setExpanded] = React.useState(false);
-  
+ 
   /* State Hook For Colour Scheme */
   const [color, setColor] = React.useState("grey");
 
@@ -194,6 +194,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
 
   const handleAddCMClose = () => setaddCMOpen(false);
 
+
   /* This Runs When The Button To Show Comments Is Clicked */
   const handleExpandClick = () => {
     getComments(post)
@@ -249,7 +250,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
         <CardContent>
           {comments.map((comment, index) => ( 
           <Grid key={index} item xs={12}> 
-            <CommentCard allLikes={allLikes} profile={profile} removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
+            <CommentCard allLikes={allLikes} profile={profile} isOwner={post.author.id === comment.author.id} removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
           </Grid>))}
           <Grid item xs={12} sx={{marginTop: "8px"}}>
             <Card fullwidth="true" sx={{maxHeight: 200, mt:"1%"}}>
