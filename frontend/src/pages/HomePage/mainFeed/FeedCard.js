@@ -150,7 +150,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   const editComment = comment => setComments(comments.map(x => x.id === comment.id ? comment : x))
 
   /* State Hook For Menu (edit/remove) */
-  const [anchorEl, setAnchorEl] = React.useState(undefined);
+  const [anchorEl, setAnchorEl] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
 
   /* State Hook For Adding comment*/

@@ -5,12 +5,12 @@ import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import AddCircleSharpIcon from '@mui/icons-material/AddCircleSharp';
 import { useSelector, useDispatch } from 'react-redux';
-import axios from 'axios';
 import { profileEdit } from '../../../redux/profileSlice';
 import { editProfile, editGitHub } from '../../../Services/profile';
+import Paper from '@mui/material/Paper';
 
 const style = {
-    textField: { minWidth: '20rem' },
+    textField: { minWidth: '100%' },
     box: {
         position: 'absolute',
         top: '50%',
@@ -21,10 +21,12 @@ const style = {
         bgcolor: 'background.paper',
         boxShadow: 24,
         p: 4,
+        borderRadius: 5, 
     },
     avatar: {
         width: 70,
-        height: 70
+        height: 70, 
+        marginLeft: "10%", 
     },
     addIcon: {
         width: 30,
@@ -50,6 +52,7 @@ export default function ProfileEditModal(props) {
     const userID = useSelector(state => state.profile.id);
     const profileImage = useSelector(state => state.profile.profileImage);
     const github = useSelector(state => state.profile.github);
+    console.log ("github is :", github);
     const dispatch = useDispatch();
 
     const handleSubmit = (event) => {
@@ -76,7 +79,8 @@ export default function ProfileEditModal(props) {
                     console.log(res.data) ;
                     dispatch(profileEdit(res.data));
                 })
-                .catch( err => console.log(err) );
+                .catch( err => console.log(err) )
+                .finally( props.onClose );
         }
     }
 
@@ -108,8 +112,9 @@ export default function ProfileEditModal(props) {
                 <Typography sx={{ fontWeight: 'bold', marginBottom: '2rem' }} id="modal-modal-title" variant="h4" component="h2">
                     Edit Profile
                 </Typography>
-
+                <Paper sx={{width:"100%", height:100, p:2}}>
                 <Grid container spacing={0} justifyContent="center" direction='row' alignItems='center'>
+                    
                     <Grid item xs={3} >
 
                         <Badge
@@ -136,12 +141,12 @@ export default function ProfileEditModal(props) {
                             id='github'
                             name="github"
                             label="Github Link"
-                            defaultValue={github.split("github.com/")[1]}
+                            defaultValue={github}
                             sx={style.textField}
                         />
                     </Grid>
                 </Grid >
-
+                </Paper>
 
                 <Stack spacing={1} sx={style.buttonContainer}>
                     <Button variant='contained' type='submit'>Save</Button>
