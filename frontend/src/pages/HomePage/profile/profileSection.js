@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import EditIcon from '@mui/icons-material/Edit'
 import ProfileEditModal from './profileEditModal';
 import ProfileList from './ProfileList';
+import { intersectionBy } from 'lodash/fp';
 import { removeFollowing as removeFollowingReducer } from "../../../redux/followingsSlice"
 
 
@@ -62,7 +63,9 @@ export default function ProfileSection({alertError, alertSuccess, addToFeed}) {
         <Typography variant='subtitle1'>{github}</Typography>
       </Box>
       <Divider />
-      <ProfileList type="following" profiles={following} title="Following" author={author} removeProfile={removeFollowing} alertError={alertError} alertSuccess={alertSuccess} addToFeed={addToFeed}/>
+      <ProfileList type="friends" profiles={intersectionBy(x => x["id"])(following)(followers)} title="Friends" author={author} removeProfile={removeFollowing} alertError={alertError} alertSuccess={alertSuccess} addToFeed={addToFeed}/>
+      <Divider />
+      <ProfileList type="following" profiles={following} title="Following" author={author} removeProfile={removeFollowing} alertError={alertError} alertSuccess={alertSuccess} />
       <Divider />
       <ProfileList title='Followers' profiles={followers} handleCollapse={handleFollower} isListOpen={isFollowerOpen} alertSuccess={alertSuccess} addToFeed={addToFeed}/>
 

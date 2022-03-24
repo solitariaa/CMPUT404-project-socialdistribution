@@ -8,9 +8,10 @@ import requests as r
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, renderer_classes, permission_classes, authentication_classes
+from .helpers import get, post, patch, put, delete
 
 status_codes = {200: status.HTTP_200_OK,
                 201: status.HTTP_201_CREATED,
@@ -19,7 +20,9 @@ status_codes = {200: status.HTTP_200_OK,
                 401: status.HTTP_401_UNAUTHORIZED,
                 403: status.HTTP_403_FORBIDDEN,
                 404: status.HTTP_404_NOT_FOUND,
-                409: status.HTTP_409_CONFLICT}
+                405: status.HTTP_405_METHOD_NOT_ALLOWED,
+                409: status.HTTP_409_CONFLICT,
+                500: status.HTTP_500_INTERNAL_SERVER_ERROR}
 
 responses = {200: {"success": "OK!"},
              201: {"success": "Successfully Created!"},
@@ -28,17 +31,22 @@ responses = {200: {"success": "OK!"},
              401: {"error": "Unauthorized!"},
              403: {"error": "Forbidden!!"},
              404: {"error": "Not Found!"},
-             409: {"error": "Conflict!"}}
+             405: {"error": "Method Not Allowed!"},
+             409: {"error": "Conflict!"},
+             500: {"error": "Internal Server Error!"}}
 
 
 def get_headers(request):
-    return {"X-CSRFToken": request.headers.get("X-CSRFToken", default=""),
-            "Authorization": request.headers.get("Authorization", default=""),
-            "Content-Type": request.headers.get("Content-Type", default="application/json")}
+    headers = {"Content-Type": request.headers.get("Content-Type", default="application/json")}
+    if "X-CSRFToken" in request.headers:
+        headers["X-CSRFToken"] = request.headers.get("X-CSRFToken")
+    if "Authorization" in request.headers:
+        headers["Authorization"] = request.headers.get("Authorization")
+    return headers
 
 
 def proxy_get(url_str, request):
-    res = r.get(url_str, params=request.query_params, headers={"Authorization": request.headers.get("Authorization", default="")})
+    res = get(url_str, params=request.query_params, headers=get_headers(request))
     content_type = res.headers.get("Content-Type", default="application/json")
     if content_type == "application/json":
         status_code = status_codes[res.status_code]
@@ -48,7 +56,7 @@ def proxy_get(url_str, request):
 
 
 def proxy_put(url_str, request):
-    res = r.put(url_str, data=json.dumps(request.data), headers=get_headers(request))
+    res = put(url_str, data=json.dumps(request.data), headers=get_headers(request))
     content_type = res.headers.get("Content-Type", default="application/json")
     status_code = status_codes[res.status_code]
     response_body = res.json() if res.status_code in [200, 201] else responses[res.status_code]
@@ -56,7 +64,7 @@ def proxy_put(url_str, request):
 
 
 def proxy_patch(url_str, request):
-    res = r.patch(url_str, data=json.dumps(request.data), headers=get_headers(request))
+    res = patch(url_str, data=json.dumps(request.data), headers=get_headers(request))
     content_type = res.headers.get("Content-Type", default="application/json")
     status_code = status_codes[res.status_code]
     response_body = res.json() if res.status_code == 200 else responses[res.status_code]
@@ -64,7 +72,7 @@ def proxy_patch(url_str, request):
 
 
 def proxy_post(url_str, request):
-    res = r.post(url_str, data=json.dumps(request.data), headers=get_headers(request))
+    res = post(url_str, data=json.dumps(request.data), headers=get_headers(request))
     content_type = res.headers.get("Content-Type", default="application/json")
     status_code = status_codes[res.status_code]
     response_body = res.json() if res.status_code in [201, 200] else responses[res.status_code]
@@ -72,7 +80,7 @@ def proxy_post(url_str, request):
 
 
 def proxy_delete(url_str, request):
-    res = r.delete(url_str, headers=get_headers(request))
+    res = delete(url_str, headers=get_headers(request))
     content_type = res.headers.get("Content-Type", default="application/json")
     status_code = status_codes[res.status_code]
     response_body = responses[res.status_code]
@@ -96,7 +104,7 @@ def proxy_selector(request, proxy_url):
 @permission_classes([AllowAny])
 @renderer_classes([JSONRenderer])
 @api_view(['GET', 'PUT', 'POST', 'PATCH', 'DELETE'])
-@authentication_classes([TokenAuthentication])
+@authentication_classes([TokenAuthentication, BasicAuthentication])
 def proxy_requests(request, path):
     try:  # If Path Is A URL, We Need To Make A Request To Another Server
         validate = URLValidator()
@@ -129,6 +137,8 @@ def proxy_requests(request, path):
 
 @api_view(['GET'])
 @renderer_classes([JSONRenderer])
+@authentication_classes([TokenAuthentication, BasicAuthentication])
+@permission_classes([AllowAny])
 def get_authors(request):
-    res = r.get(f"{settings.DOMAIN}/api/authors")
+    res = r.get(f"{settings.DOMAIN}/api/authors", headers=get_headers(request))
     return Response(res.json(), status=status_codes[res.status_code])

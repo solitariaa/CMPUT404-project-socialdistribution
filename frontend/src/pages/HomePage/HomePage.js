@@ -22,6 +22,8 @@ import { getAllLikes } from '../../Services/likes';
 import { getAuthorFromStorage, setAuthorInStorage  } from '../../LocalStorage/profile';
 import { setInboxInStorage, getInboxFromStorage } from '../../LocalStorage/inbox';
 import { getFollowers } from '../../Services/followers';
+import PageviewRoundedIcon from '@mui/icons-material/PageviewRounded';
+import ReceivedURLDialogs from './postSharing/receivedURL';
 
 const drawerWidth = 400;
 
@@ -38,8 +40,7 @@ export default function HomePage() {
     const [value, setValue] = React.useState('1');
 
     /* State Hook For Likes */
-    const [allLikes, setAllLikes] = React.useState({});
-    var likeResults = [];
+    const [allLikes, setAllLikes] = React.useState([]);
 
     /* State Hook For Displaying Alerts */
     const [openAlert, setOpenAlert] = useState({isOpen: false, message: "", severity: "error"})
@@ -93,10 +94,18 @@ export default function HomePage() {
     /* State Hook For User*/
     const userObj = useSelector( state => state.profile );
 
-    // console.log ("profile is", userObj)
 
     /* State Hook For GitHub */
     const [githubFeed, setGithubFeed] = useState([]);
+    /* State Hook For ReceivedURL dialog*/
+    const [openReceivedURL, setReceivedURLOpen] = React.useState(false);
+
+    const handleReceivedURLClickOpen = () => {
+        setReceivedURLOpen(true);
+    };
+    const handleReceivedURLClose = () => {
+        setReceivedURLOpen(false);
+    };
 
     /* We Use This To Listen To Changes In The Window Size */
     useEffect( () => { 
@@ -161,7 +170,6 @@ export default function HomePage() {
         getAllLikes(userObj)
         .then( res => {
             setAllLikes(res.data.items)
-            // console.log(res.data.items)
         })
         .catch( err => console.log(err) )
         
@@ -181,6 +189,7 @@ export default function HomePage() {
             <Toolbar sx={{ flexWrap: 'wrap' }}>
                 <Typography variant="h5" noWrap component="div"> Social Distribution </Typography>
                 <span style={{float: "right", position: "absolute", right: 5}}>
+                    <IconButton aria-label="delete" size="large" onClick={handleReceivedURLClickOpen}><PageviewRoundedIcon /></IconButton>
                     <NavButton onClick={() => setValue("1") }>Public</NavButton>
                     <NavButton onClick={() => setValue("2") }>Personal</NavButton>
                     <NavButton onClick={() => setValue("3") }>Management</NavButton>
@@ -257,6 +266,8 @@ export default function HomePage() {
                 </TabContext>
             </Box>
         </Box>
+        <ReceivedURLDialogs open ={openReceivedURL} onClose={handleReceivedURLClose} alertSuccess={alertSuccess} alertError={alertError}></ReceivedURLDialogs>
     </Body>
+    
   );
 }

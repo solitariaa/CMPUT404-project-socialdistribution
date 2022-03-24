@@ -9,6 +9,9 @@ urlpatterns = [
     # Django Admin Site
     path('admin/', admin.site.urls),
 
+    # Node Management
+    path('nodes/', include('nodes.urls')),
+
     # List All Authors On The Local Server
     path('authors/', views.get_authors, name='get_authors'),
 
@@ -24,13 +27,6 @@ urlpatterns = [
     # Post API
     path('api/authors/<uuid:author>/posts/', include('posts.urls')),
 
-    # Likes API
-    path('api/authors/<uuid:author>/posts/<uuid:post>/comments/<uuid:comment>/likes/', include('likes.urls')),
-    path('api/authors/<uuid:author>/posts/<uuid:post>/likes/', include('likes.urls')),
-
-    # Liked API
-    path('api/authors/<uuid:author>/liked/', include('liked.urls')),
-    
     # Comment Api
     path('api/authors/<uuid:author>/posts/<uuid:post>/comments/', include('comment.urls')),
 
@@ -42,6 +38,9 @@ urlpatterns = [
 
     # Following Api
     path('api/authors/<uuid:author>/following/', include('followers.following_urls')),
+
+    # Friends Api
+    path('api/authors/<uuid:author>/friends/', include('followers.friends_urls')),
 
     # Serve API Schema
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
