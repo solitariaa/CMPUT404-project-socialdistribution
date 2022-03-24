@@ -2,7 +2,7 @@ import base64
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework import status
 from rest_framework.decorators import action, renderer_classes
 from django.db.utils import IntegrityError
@@ -14,6 +14,8 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.contrib import auth
 from rest_framework.authtoken.models import Token
+from likes.models import Likes
+from likes.serializers import LikesSerializer
 
 
 class CustomPageNumberPagination(PageNumberPagination):
@@ -24,11 +26,16 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication, BasicAuthentication]
     serializer_class = AuthorSerializer
-    queryset = Author.objects.all()
+    queryset = Author.objects.all().order_by("displayName")
     pagination_class = CustomPageNumberPagination
-    permission_classes = [AllowAny]
+
+    @action(detail=True, methods=['GET'])
+    def liked(self, request, pk):
+        author: Author = get_object_or_404(Author, local_id=pk)
+        likes = Likes.objects.all().filter(author_url=author.id)
+        return Response({"type": "liked", "items": LikesSerializer(likes, many=True).data}, content_type="application/json")
 
     @action(detail=False, methods=['post'])
     def register(self, request):
@@ -76,8 +83,8 @@ class AuthorViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Manages Permissions On A Per-Action Basis"""
-        if self.action in ['login']:
-            permission_classes = [AllowAny]
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsAuthenticated]
         else:
             permission_classes = [AllowAny]
         return [permission() for permission in permission_classes]
