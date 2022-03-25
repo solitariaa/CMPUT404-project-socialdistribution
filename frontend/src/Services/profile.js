@@ -6,7 +6,7 @@ export function editAvatar(avatarURL, imageData) {
 }
 
 export function editGitHub(profileURL, gitHub) {
-    return patch(profileURL, {"github": "https://www.github.com/" + gitHub});
+    return patch(profileURL, {"github":  gitHub});
 }
 
 export function editProfile(profile, imageData, gitHub) {

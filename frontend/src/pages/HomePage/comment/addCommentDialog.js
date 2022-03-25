@@ -31,6 +31,7 @@ export default function AddCommentsDialog({open, handleAddCMClose, addComment, p
       author: getAuthorFromStorage(),
     }
 
+
     /* Validate Fields */
     const fieldValidator = new RegExp("^\\S+")
     const valid = fieldValidator.test(data.comment) && fieldValidator.test(data.contentType) 

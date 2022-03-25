@@ -12,6 +12,8 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import GetAppIcon from '@mui/icons-material/GetApp';
 import { getUnlistedPost } from "../../../Services/posts";
+import UnlistedFeed from "./unlistedFeed";
+import Collapse from '@mui/material/Collapse';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialogContent-root': {
@@ -58,10 +60,18 @@ BootstrapDialogTitle.propTypes = {
 export default function ReceivedURLDialogs({open, onClose, alertSuccess, alertError}) {
     //state hook for URL
     const[id, setId] = React.useState("");
+    //state hook for unlisted post
+    const[unlistedPost, setUnlistedPost] = React.useState({});
+    //state hook for expand view
+    const [expanded, setExpanded] = React.useState(false);
+
+
     //Handler for get post from URL
     const handleGet = () => {
         getUnlistedPost(id)
         .then( res => { 
+            setUnlistedPost(res.data)
+            setExpanded(true);
             alertSuccess("Success: Retrieved Post!");
         })
         .catch( err => {console.log(err) 
@@ -85,11 +95,9 @@ export default function ReceivedURLDialogs({open, onClose, alertSuccess, alertEr
             Get
         </Button>
         </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={onClose}>
-            Save changes
-          </Button>
-        </DialogActions>
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <UnlistedFeed post={unlistedPost}></UnlistedFeed>
+        </Collapse>
       </BootstrapDialog>
     </div>
   );
