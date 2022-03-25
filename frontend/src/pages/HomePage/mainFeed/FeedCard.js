@@ -250,9 +250,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
         <CardContent>
           {comments.map((comment, index) => ( 
           <Grid key={index} item xs={12}> 
-            {((isOwner) && (post.visibility === "FRIENDS"))||(post.visibility !== "FRIENDS")
-             ? <CommentCard allLikes={allLikes} profile={profile} isOwner={post.author.id === comment.author.id} removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
-             : <></>}
+            <CommentCard allLikes={allLikes} profile={profile} isOwner={post.author.id === comment.author.id} removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
           </Grid>))}
           <Grid item xs={12} sx={{marginTop: "8px"}}>
             <Card fullwidth="true" sx={{maxHeight: 200, mt:"1%"}}>

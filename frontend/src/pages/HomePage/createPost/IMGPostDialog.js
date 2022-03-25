@@ -12,7 +12,7 @@ import Collapse from '@mui/material/Collapse';
 /*
  * Description: Detail view for each prize which allows user to purchase the prize
  */ 
-export default function IMGPostDialog({alertSuccess, alertError, open, onClose, addToFeed, pri, profile}) {
+export default function IMGPostDialog({alertSuccess, alertError, open, onClose, addToFeed}) {
 
   /* Hook For Post Content Type */
   const [content, setContent] = React.useState('image/png;base64');
@@ -226,13 +226,11 @@ return (
                     </Box>
                   </Paper>
                 </Grid>
-                {pri === false ?
                 <Grid item xl={6} md={6} sm={12} xs={12}>
                   <Paper sx={{width: "100%", mt:2}}>
                     <Box sx={{width: "100%", p:"6px"}}>
                      <FormControl required fullWidth>
-                        <InputLabel id="visibility">Visibility</InputLabel>
-
+                        <InputLabel id="visibility">Visbility</InputLabel>
                         <Select
                           labelId="visibility"
                           id="visibility"
@@ -241,34 +239,13 @@ return (
                           label="Visbility"
                           onChange={handleChange}
                         >
-                            <MenuItem value={"PUBLIC"}>Public Post</MenuItem>
-                            <MenuItem value={"FRIENDS"}>Friends Only</MenuItem>
+                        <MenuItem value={"PUBLIC"}>Public Post</MenuItem>
+                        <MenuItem value={"FRIENDS"}>Friends Only</MenuItem>
                         </Select>
                     </FormControl>
                     </Box>
                   </Paper>
-                </Grid>:
-                <Grid item xl={6} md={6} sm={12} xs={12}>
-                <Paper sx={{width: "100%", mt:2}}>
-                  <Box sx={{width: "100%", p:"6px"}}>
-                   <FormControl required fullWidth>
-                      <InputLabel id="visibility">Visibility</InputLabel>
-
-                      <Select
-                        labelId="visibility"
-                        id="visibility"
-                        name="visibility"
-                        value={profile.id}
-                        label="Visbility"
-                        onChange={handleChange}
-                      >
-                          <MenuItem value={profile.id}>Private</MenuItem>
-                      </Select>
-                  </FormControl>
-                  </Box>
-                </Paper>
-              </Grid>
-                } 
+                </Grid>
             </Grid>
             </Grid>
             <Paper sx={{p:1, mt:1}}>
