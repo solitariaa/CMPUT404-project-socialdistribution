@@ -228,7 +228,7 @@ export default function HomePage() {
                         ))}
                     </TabPanel>
                     <TabPanel value="2" sx={{p:0}}>
-                        {inbox.filter(post => post.visibility !== "FRIENDS").map((post, index) => (
+                        {inbox.filter(post => post.visibility === "FRIENDS").map((post, index) => (
                             (<Grid item xs={12} key={index}> 
                                 <FeedCard allLikes= {allLikes} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
                             </Grid>)
