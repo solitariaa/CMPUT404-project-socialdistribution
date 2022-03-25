@@ -23,6 +23,9 @@ export default function SharingDialog({open, onClose, post, alertSuccess, alertE
       <Dialog open={open} onClose={onClose} fullWidth>
         <DialogTitle>Sharing the unlisted post</DialogTitle>
         <UrlSharingBox post={post}></UrlSharingBox>
+        <DialogActions sx={{pr:1.5}}>
+          <Button onClick={onClose}>Cancel</Button>
+        </DialogActions>
       </Dialog>
     </div>
   );
