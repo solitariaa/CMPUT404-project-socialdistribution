@@ -32,7 +32,7 @@ function isoToHumanReadableDate(isoDate) {
   return dateFormat.format(date) + " - " + timeFormat.format(date);
 }
 
-export default function CommentCard({allLikes, profile, comment, alertSuccess, alertError, removeComment, editComments}) {
+export default function CommentCard({allLikes, profile, isOwner, comment, alertSuccess, alertError, removeComment, editComments}) {
   /* Hook For Like icon color */
   const [color, setColor] = React.useState("grey");
 
@@ -123,9 +123,9 @@ export default function CommentCard({allLikes, profile, comment, alertSuccess, a
           <IconButton aria-label="like" onClick={handleColor}>
             <FavoriteIcon color = {color}/>
           </IconButton>
-          <IconButton aria-label="settings" onClick={handleClick}>
+          {isOwner ? <IconButton aria-label="settings" onClick={handleClick}>
             <MoreVertIcon />
-          </IconButton>
+          </IconButton>: <></>} 
           </Stack>
         </Grid>
       </Grid>
