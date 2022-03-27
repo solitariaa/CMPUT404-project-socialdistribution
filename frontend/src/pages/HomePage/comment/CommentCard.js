@@ -18,6 +18,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { createCommentLikes, getCommentLikes, deleteCommentLikes } from '../../../Services/likes';
 import { set } from 'lodash/fp';
+import rehypeRaw from 'rehype-raw'
 
 const PostImage = styled('img')({width: "100%"})
 
@@ -113,7 +114,7 @@ export default function CommentCard({allLikes, profile, isOwner, comment, alertS
             {comment.comment.split("\n").map((p, index) => <Typography key={index} paragraph> {p} </Typography>)}
           </Box>}
           {(comment.contentType === "text/markdown")&&<Box sx={{width: "100%", px: 0}}>
-            <ReactMarkdown components={{img: PostImage}}>{comment.comment}</ReactMarkdown>
+            <ReactMarkdown rehypePlugins={[rehypeRaw]} components={{img: PostImage}}>{comment.comment}</ReactMarkdown>
           </Box>}
         </CardContent>
         </Grid>

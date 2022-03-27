@@ -1,4 +1,4 @@
-import { post, get, put, del } from "./requests";
+import { post, get, put, del, getWithParams } from "./requests";
 
 export function getFollowers(authorID) {
     return get("authors/" + authorID + "/followers/");
@@ -29,4 +29,8 @@ export function addFollowing(authorID, followerID) {
 
 export function deleteFollowing(authorID, followerID) {
     return del("authors/" + authorID + "/following/" + followerID + "/");
+}
+
+export function getAllUsers() {
+    return getWithParams("authors/", {remote: "true"});
 }

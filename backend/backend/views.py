@@ -122,7 +122,7 @@ def proxy_requests(request, path):
             url = "http://" + (path + "/").split("http://")[-1].replace("//", "/")
         status_code, content_type, response_body = proxy_selector(request, url)
         if content_type != "application/json":
-            response = HttpResponse(content_type=content_type)
+            response = HttpResponse(content_type=content_type, status=status_code)
             response.write(response_body)
             return response
         return Response(response_body, status=status_code, content_type="application/json")
@@ -140,5 +140,5 @@ def proxy_requests(request, path):
 @authentication_classes([TokenAuthentication, BasicAuthentication])
 @permission_classes([AllowAny])
 def get_authors(request):
-    res = r.get(f"{settings.DOMAIN}/api/authors", headers=get_headers(request))
+    res = r.get(f"{settings.DOMAIN}/api/authors", headers=get_headers(request), params=request.query_params)
     return Response(res.json(), status=status_codes[res.status_code])

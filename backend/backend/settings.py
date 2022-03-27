@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-1fon4d1f)xj3upklzud_xkf#lfke74okyw=*j6kbo$26^f0^_v
 DEBUG = True
 
 DOMAIN = str(os.environ.get("DOMAIN", default="http://127.0.0.1:8000"))
-#DOMAIN = "http://project-socialdistribution.herokuapp.com"
+# DOMAIN = "http://project-socialdistribution.herokuapp.com"
 
 ALLOWED_HOSTS = [urlparse(DOMAIN).netloc.split(":")[0]] + ["127.0.0.1"]
 
@@ -96,6 +96,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 db_from_env = dj_database_url.config()
 DATABASES = {'default': dict()}
 DATABASES['default'].update(db_from_env)
+DATABASES["default"]["CONN_MAX_AGE"] = 10
 """
 DATABASES = {
     'default': {

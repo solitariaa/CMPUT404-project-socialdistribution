@@ -1,20 +1,21 @@
 import json
-from backend.helpers import get_author
+from backend.helpers import get_author, get_author_list
 from likes.serializers import LikesSerializer
-from concurrent.futures import ThreadPoolExecutor
-from rest_framework.response import Response
 
 
 def get_likes_helper(like_objects):
     likes = json.loads(json.dumps(LikesSerializer(like_objects, many=True).data))
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.map(lambda x: get_author(x["author"]), likes)
-    items = []
-    for like, author in zip(likes, future):
-        item = dict(**like)
-        item["author"] = author
-        items.append(item)
-    return items
+    authors = get_author_list([like["author"] for like in likes])
+    for like in likes:
+        found = False
+        for author in authors:
+            if "id" in author and (like["author"] in author["id"] or author["id"] in like["author"]):
+                found = True
+                like["author"] = author
+                break
+        if not found:
+            like["author"] = {"error": "Author Not Found!"}
+    return likes
 
 
 def get_liked(like_objects):
