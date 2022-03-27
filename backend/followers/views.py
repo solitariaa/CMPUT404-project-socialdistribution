@@ -49,11 +49,9 @@ def friends_list(request, author):
 @permission_classes([IsAuthenticated])
 def followers_list(request, author):
     author_object = get_object_or_404(Author, local_id=author)
-    print([extract_remote_id(f.actor) for f in author_object.follower_set.all()])
     with ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.map(lambda x: get_author(x), [extract_remote_id(f.actor) for f in author_object.follower_set.all()])
     followers = [f for f in future if "type" in f]
-    print(followers)
     followers.sort(key=lambda x: x["displayName"])
     return Response({"type": "followers", "items": followers}, content_type="application/json")
 

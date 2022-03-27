@@ -28,7 +28,7 @@ class CommentPagination(PageNumberPagination):
     page_query_param = 'page'
 
     def get_paginated_response(self, data):
-        return Response({'type': "comments", 'items': data})
+        return Response({'type': "comments", 'comments': data})
 
 
 class CommentViewSet(viewsets.ModelViewSet):

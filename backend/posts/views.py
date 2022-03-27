@@ -53,7 +53,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         author = self.kwargs["author"]
-        return Post.objects.filter(author__local_id=author).order_by("-published")
+        return Post.objects.filter(author__local_id=author, visibility="PUBLIC", contentType__contains="text").order_by("-published")
 
     def perform_create(self, serializer):
         author = get_object_or_404(Author, local_id=self.kwargs["author"])

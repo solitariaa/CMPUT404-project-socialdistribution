@@ -1,4 +1,9 @@
 import base64
+from nodes.models import Node
+from concurrent.futures import ThreadPoolExecutor
+from backend import helpers
+from django.conf import settings
+from functools import reduce
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -28,8 +33,22 @@ class CustomPageNumberPagination(PageNumberPagination):
 class AuthorViewSet(viewsets.ModelViewSet):
     authentication_classes = [TokenAuthentication, BasicAuthentication]
     serializer_class = AuthorSerializer
-    queryset = Author.objects.all().order_by("displayName")
     pagination_class = CustomPageNumberPagination
+
+    def get_queryset(self):
+        return Author.objects.all().order_by("displayName")
+
+    def list(self, request, *args, **kwargs):
+        authors = [AuthorSerializer(author).data for author in self.get_queryset()]
+        if request.query_params.get("remote", "false") == "true":
+            nodes = Node.objects.all()
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                futures = executor.map(lambda node: helpers.get_authors(node), [node.host for node in nodes if node.host.rstrip("/") not in settings.DOMAIN.rstrip("/")])
+            remote_authors = reduce(lambda acc, x: acc + (x["items"] if "items" in x else []), futures, [])
+            authors += [helpers.validate_author(author) for author in remote_authors]
+            authors.sort(key=lambda x: x["displayName"])
+        page = self.paginator.paginate_queryset(authors, request)
+        return self.paginator.get_paginated_response(page)
 
     @action(detail=True, methods=['GET'])
     def liked(self, request, pk):
