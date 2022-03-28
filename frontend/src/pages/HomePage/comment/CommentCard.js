@@ -94,7 +94,7 @@ export default function CommentCard({allLikes, profile, isOwner, comment, alertS
   };
 
   React.useEffect( () => {
-    setColor(allLikes.map(x => x.object).includes(comment.id) ? "secondary" : "grey");
+    setColor(allLikes.includes(comment.id) ? "secondary" : "grey");
   }, [comment.id, allLikes] );
 
   return (

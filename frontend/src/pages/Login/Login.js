@@ -65,7 +65,7 @@ export default function LoginPage() {
               console.log(values[1].data);
               console.log(values[2].data);
               console.log(values[3].data);
-              setInboxInStorage(values[0].data.items);
+              dispatch(setInbox(values[0].data.items));
               dispatch(setFollowers(values[1].data.items));
               dispatch(setFollowing(values[2].data.items));
               dispatch(setUsers(values[3].data.items));

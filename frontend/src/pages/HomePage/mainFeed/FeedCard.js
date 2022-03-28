@@ -33,6 +33,9 @@ import SharingDialog from "../postSharing/sharingDialog";
 import SharingUnlistedDialog from "../postSharing/sharingUnlistedDialog";
 import rehypeRaw from 'rehype-raw'
 import { Chip } from '@mui/material';
+import { useDispatch } from 'react-redux';
+import { updateInboxItem } from '../../../redux/inboxSlice';
+import { update } from 'lodash/fp';
 
 const AvatarContainer = styled('div')({display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "125px"});
 
@@ -82,7 +85,9 @@ function CardButtons({isOwner, handleColor, expanded, handleExpandClick, handleL
 }
 
 
-export default function FeedCard({allLikes, profile, post, isOwner, alertError, alertSuccess, updateFeed, removeFromFeed}) {
+export default function FeedCard({allLikes, addToLikes, profile, post, isOwner, alertError, alertSuccess, updateFeed, removeFromFeed}) {
+  const dispatch = useDispatch();
+
   /* State Hook For Expanding The Comments */
   const [expanded, setExpanded] = React.useState(false);
  
@@ -90,37 +95,18 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   const [color, setColor] = React.useState("grey");
 
   // /* State Hook For likes */
-  const [likes, setLikes] = React.useState(false);
   const handleLikes = () => {
-    const data = {
-      type: "Like", 
-      summary: profile.displayName + " likes your post",
-      context: "https://www.w3.org/ns/activitystreams",
-      object: post.id, 
-      author: profile
-    }
-    console.log(data);
-    if (color !== "grey"){
-      deleteLikes(post, post.id)
-      .then( res => { 
-        alertSuccess("Success: Delete Like!");
-        setColor("grey")
-        setLikes(!likes)
-      })
-      .catch( err => {console.log(err)
-        alertError("Error: Could Not Delete Like!");
-      } );
-    }else{
+    if (! allLikes.includes(post.id)) {
       createPostLikes(post, set("id")(profile.url)(profile))
-      .then( res => { 
-        alertSuccess("Success: Created New Like!");
-        setColor("secondary")
-        setLikes(!likes)
-      })
-      .catch( err => {console.log(err)
-        alertError("Error: Could Not Create Like!");
-      } );
-      
+        .then( res => { 
+          dispatch(updateInboxItem( update("likeCount")(x => x + 1)(post) ));
+          addToLikes(post.id);
+          alertSuccess("Success: Created New Like!");
+          setColor("secondary");
+        })
+        .catch( err => {console.log(err)
+          alertError("Error: Could Not Create Like!");
+        });
     }
   }
 
@@ -128,6 +114,8 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   const [editOpen, setEditOpen] = React.useState(false);
   const closeEditDialog = () => setEditOpen(false);
   const openEditDialog = () => {
+    setAnchorEl(undefined);
+    setMenuOpen(false);
     setEditOpen(true);
   }
 
@@ -140,6 +128,8 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const closeDeleteDialog = () => setDeleteOpen(false);
   const openDeleteDialog = () => {
+    setAnchorEl(undefined);
+    setMenuOpen(false);
     setDeleteOpen(true);
   };
 
@@ -215,7 +205,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   
   /* This Runs When The alllikes and post.id has changed */
   React.useEffect( () => {
-    setColor(allLikes.map(x => x.object).includes(post.id) ? "secondary" : "grey");
+    setColor(allLikes.includes(post.id) ? "secondary" : "grey");
   }, [post.id, allLikes] );
 
   return (

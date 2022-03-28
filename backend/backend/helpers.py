@@ -19,7 +19,7 @@ def get_node(url):
 def prepare_request(url, headers):
     node: Node = get_node(url)
     auth = None
-    if node is not None and settings.DOMAIN not in node.host:
+    if node is not None and (settings.DOMAIN not in node.host or headers is None or "Authorization" not in headers):
         auth = HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)
     if settings.DOMAIN not in node.host and headers is not None:
         headers.pop("Authorization")

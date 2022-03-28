@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { concat } from 'lodash/fp'
+import { concat, findIndex } from 'lodash/fp'
 
 export const inboxSlice = createSlice({
   name: 'inbox',
@@ -13,9 +13,16 @@ export const inboxSlice = createSlice({
     setInbox: (state, action) => {
       state.items = action.payload;
     },
+    removeFromInbox: (state, action) => {
+      state.items = state.items.filter( x => x.id !== action.payload.id);
+    }, 
+    updateInboxItem: (state, action) => {
+      const index = findIndex(x => x.id === action.payload.id)(state.items);
+      state.items = state.items.map((x, i) => i === index ? action.payload : x);
+    }, 
   },
 })
 
-export const { pushToInbox, setInbox } = inboxSlice.actions
+export const { pushToInbox, setInbox, removeFromInbox, updateInboxItem } = inboxSlice.actions
 
 export default inboxSlice.reducer
