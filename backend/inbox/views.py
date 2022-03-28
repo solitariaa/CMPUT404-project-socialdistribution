@@ -82,7 +82,7 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         foreign_posts = []
         for f in futures:
             print(f.headers)
-            if f is not None and f.status_code == 200 and f.headers.get("Content-Type", "") == "application/json":
+            if f is not None and f.status_code == 200 and "application/json" in f.headers.get("Content-Type", ""):
                 if "posts" in f.json():
                     foreign_posts += f.json()["posts"]
                 elif "items" in f.json():
