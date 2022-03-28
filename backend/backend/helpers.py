@@ -22,11 +22,13 @@ def prepare_request(url, headers):
     p = parse.urlparse(url)
     hostname = f"{p.scheme}://{p.hostname}"
     print(url, node, hostname)
+    if node is None:
+        print(url, node, hostname)
     if node is not None and (settings.DOMAIN not in node.host or headers is None or "Authorization" not in headers):
         auth = HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)
-    if settings.DOMAIN not in node.host and headers is not None:
+    if node is not None and settings.DOMAIN not in node.host and headers is not None:
         headers.pop("Authorization")
-    if node.host == "http://squawker-cmput404.herokuapp.com/api/":
+    if node is not None and node.host == "http://squawker-cmput404.herokuapp.com/api/":
         url = url.rstrip("/")
     return url, auth, headers
 
