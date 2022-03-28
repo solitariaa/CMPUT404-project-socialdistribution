@@ -55,9 +55,7 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
 
         # Fetch Local Posts
         local_posts_src = [item.src for item in queryset if item.src.split("/authors/")[0] == settings.DOMAIN]
-        print("asdasdasdasd")
         local_posts = [PostSerializer(p).data for p in Post.objects.filter(id__in=local_posts_src) if not p.unlisted]
-        print(local_posts)
 
         # Fetch Foreign Posts
         # with ThreadPoolExecutor(max_workers=1) as executor:
