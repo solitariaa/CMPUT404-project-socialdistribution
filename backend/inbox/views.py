@@ -55,7 +55,9 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
 
         # Fetch Local Posts
         local_posts_src = [item.src for item in queryset if item.src.split("/authors/")[0] == settings.DOMAIN]
+        print("asdasdasdasd")
         local_posts = [PostSerializer(p).data for p in Post.objects.filter(id__in=local_posts_src) if not p.unlisted]
+        print(local_posts)
 
         # Fetch Foreign Posts
         # with ThreadPoolExecutor(max_workers=1) as executor:
@@ -79,7 +81,8 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         # Prepare Fetched Remote Posts
         foreign_posts = []
         for f in futures:
-            if f is not None and f.status_code == 200:
+            print(f.headers)
+            if f is not None and f.status_code == 200 and f.headers.get("Content-Type", "") == "application/json":
                 if "posts" in f.json():
                     foreign_posts += f.json()["posts"]
                 elif "items" in f.json():
