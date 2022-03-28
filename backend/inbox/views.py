@@ -79,20 +79,21 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         # Prepare Fetched Remote Posts
         foreign_posts = []
         for f in futures:
-            if f is not None and f.status_code == 200 and f.headers.get("Content-Type", "") == "application/json":
-                foreign_posts += f.json()["posts"]
-        for post in foreign_posts:
-            post["visibility"] = "PUBLIC"
-            post["id"] = helpers.extract_remote_id(post["id"])
-            post["url"] = helpers.extract_remote_id(post["id"])
-            post["author"]["id"] = helpers.extract_remote_id(post["author"]["id"])
-            post["author"]["url"] = helpers.extract_remote_id(post["author"]["id"])
-            post["author"]["profileImage"] = helpers.extract_profile_image(post["author"])
-            post["contentType"] = helpers.extract_content_type(post)
+            if f is not None and f.status_code == 200:
+                if "posts" in f.json():
+                    foreign_posts += f.json()["posts"]
+                elif "items" in f.json():
+                    foreign_posts += f.json()["items"]
+
+        # Get Likes On Posts
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            futures = executor.map(lambda p: helpers.validate_post(p), foreign_posts)
+        foreign_posts = [f for f in futures]
 
         # Paginate Response
         posts = local_posts + foreign_posts
         posts.sort(key=lambda x: x.get("published", '2022-03-24T18:22:07.990808-06:00'), reverse=True)
+        posts = list(filter(lambda x: "image" not in x["contentType"], posts))
         page = self.paginator.paginate_queryset(posts, request)
 
         # Return Response

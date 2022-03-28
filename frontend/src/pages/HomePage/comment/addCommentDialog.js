@@ -31,6 +31,7 @@ export default function AddCommentsDialog({open, handleAddCMClose, addComment, p
       author: getAuthorFromStorage(),
     }
 
+
     /* Validate Fields */
     const fieldValidator = new RegExp("^\\S+")
     const valid = fieldValidator.test(data.comment) && fieldValidator.test(data.contentType) 
@@ -40,6 +41,7 @@ export default function AddCommentsDialog({open, handleAddCMClose, addComment, p
       console.log(data);
       createComment(post, data)
         .then( res => { 
+          console.log(res.data);
           addComment(res.data);
           alertSuccess("Success: Created New Comment!");
         })

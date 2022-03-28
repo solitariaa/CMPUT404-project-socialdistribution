@@ -16,45 +16,47 @@ def get_node(url):
     return nodes[0] if len(nodes) > 0 else None
 
 
+def prepare_request(url, headers):
+    node: Node = get_node(url)
+    auth = None
+    if node is not None and (settings.DOMAIN not in node.host or headers is None or "Authorization" not in headers):
+        auth = HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)
+    if settings.DOMAIN not in node.host and headers is not None:
+        headers.pop("Authorization")
+    if node.host == "http://squawker-cmput404.herokuapp.com/api/":
+        url = url.rstrip("/")
+    return url, auth, headers
+
+
 def get(url, headers=None, params=None):
-    if headers is not None and "Authorization" in headers:
-        return r.get(url, headers=headers, params=params)
-    node = get_node(url)
-    res = r.get(url, headers=headers, params=params, auth=HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)) if node is not None else None
+    url, auth, headers = prepare_request(url, headers)
+    res = r.get(url, headers=headers, params=params, auth=auth)
     return res
 
 
 def post(url, data, headers=None):
-    if headers is not None and "Authorization" in headers:
-        return r.post(url, data=data, headers=headers)
-    node = get_node(url)
-    return r.post(url, data=data, headers=headers, auth=HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)) if node is not None else None
+    url, auth, headers = prepare_request(url, headers)
+    return r.post(url, data=data, headers=headers, auth=auth)
 
 
 def delete(url, headers=None):
-    if headers is not None and "Authorization" in headers:
-        return r.delete(url, headers=headers)
-    node = get_node(url)
-    return r.delete(url, headers=headers, auth=HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)) if node is not None else None
+    url, auth, headers = prepare_request(url, headers)
+    return r.delete(url, headers=headers, auth=auth)
 
 
 def patch(url, data, headers=None):
-    if headers is not None and "Authorization" in headers:
-        return r.patch(url, data=data, headers=headers)
-    node = get_node(url)
-    return r.patch(url, data=data, headers=headers, auth=HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)) if node is not None else None
+    url, auth, headers = prepare_request(url, headers)
+    return r.patch(url, data=data, headers=headers, auth=auth)
 
 
 def put(url, data, headers=None):
-    if headers is not None and "Authorization" in headers:
-        return r.put(url, data=data, headers=headers)
-    node = get_node(url)
-    return r.put(url, data=data, headers=headers, auth=HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)) if node is not None else None
+    url, auth, headers = prepare_request(url, headers)
+    return r.put(url, data=data, headers=headers, auth=auth)
 
 
 def get_author(author, headers=None):
-    hostname = get_hostname(author)
-    if hostname in settings.DOMAIN:
+    node = get_node(author)
+    if node.host.rstrip("/") in settings.DOMAIN:
         authors = Author.objects.filter(id__contains=author)
         return AuthorSerializer(authors[0]).data if len(authors) > 0 else {"error": "Author Not Found!"}
     response = get(author, headers)
@@ -76,9 +78,23 @@ def get_author_list(authors, headers=None):
 
 
 def get_authors(host: str, headers=None):
-    print(f"{host.rstrip('/')}/authors")
     response = get(f"{host.rstrip('/')}/authors", headers)
     return response.json() if response is not None and response.status_code == 200 else {"error": "Cannot Connect To Host!"}
+
+
+def get_likes(object_with_likes: str):
+    node = get_node(object_with_likes)
+    if node is not None:
+        response = get(f"{object_with_likes.rstrip('/')}/likes/")
+        if response.status_code == 200:
+            contents = response.json()
+            if "items" in contents:
+                return contents["items"]
+            elif "likes" in contents:
+                return contents["likes"]
+            return []
+        return []
+    return []
 
 
 def get_hostname(url):
@@ -93,7 +109,7 @@ def extract_local_id(author):
 def extract_inbox_url(author):
     host = author["host"]
     if host == "http://squawker-cmput404.herokuapp.com/":
-        return f"{host}api/authors/{extract_local_id(author)}/inbox/"
+        return f"{host}api/authors/{extract_local_id(author)}/inbox"
     return f"{host}api/authors/{extract_local_id(author)}/inbox/"
 
 
@@ -111,7 +127,7 @@ def extract_visibility(remote_post):
 def extract_remote_id(url):
     host = get_hostname(url)
     if host.rstrip("/") == "http://squawker-cmput404.herokuapp.com/".rstrip("/"):
-        return f"{host}/api/authors/{url.split('/authors/')[1]}/"
+        return f"{host}/api/authors/{url.split('/authors/')[1]}"
     return url
 
 
@@ -126,4 +142,29 @@ def extract_posts_url(author):
     host = author["host"]
     if host == "http://squawker-cmput404.herokuapp.com/":
         return f"{host}api/authors/{extract_local_id(author)}/posts"
-    return f"{host}api/authors/{extract_local_id(author)}/posts"
+    return f"{host}authors/{extract_local_id(author)}/posts/"
+
+
+def extract_likes(object_with_likes):
+    host = get_hostname(object_with_likes["id"])
+    if host == "http://squawker-cmput404.herokuapp.com/":
+        return object_with_likes["num_likes"]
+    return object_with_likes["likeCount"] if "likeCount" in object_with_likes else 0
+
+
+def validate_author(author):
+    author["id"] = extract_remote_id(author["id"])
+    author["url"] = author["url"]
+    author["profileImage"] = extract_profile_image(author)
+    return author
+
+
+def validate_post(post):
+    post["visibility"] = "PUBLIC"
+    post["id"] = extract_remote_id(post["id"])
+    post["url"] = extract_remote_id(post["id"])
+    post["contentType"] = extract_content_type(post)
+    post["author"] = validate_author(post["author"])
+    post["likeCount"] = extract_likes(post)
+    return post
+

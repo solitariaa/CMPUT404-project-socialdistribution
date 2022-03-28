@@ -31,6 +31,11 @@ import { getAuthorFromStorage } from '../../../LocalStorage/profile';
 import { set } from 'lodash/fp';
 import SharingDialog from "../postSharing/sharingDialog";
 import SharingUnlistedDialog from "../postSharing/sharingUnlistedDialog";
+import rehypeRaw from 'rehype-raw'
+import { Chip } from '@mui/material';
+import { useDispatch } from 'react-redux';
+import { updateInboxItem } from '../../../redux/inboxSlice';
+import { update } from 'lodash/fp';
 
 const AvatarContainer = styled('div')({display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "125px"});
 
@@ -61,7 +66,7 @@ function CardButtons({isOwner, handleColor, expanded, handleExpandClick, handleL
   return (
       <CardActions disableSpacing>
           <IconButton aria-label="like" onClick={handleLikes} >
-            <FavoriteIcon color = {color}/>
+            <FavoriteIcon color={color} />
           </IconButton>
           <IconButton aria-label="share" onClick={post.unlisted !== true ? handleSharingDialogClickOpen:handleSharingUnlistedOpen}>
             <ShareIcon />
@@ -71,49 +76,37 @@ function CardButtons({isOwner, handleColor, expanded, handleExpandClick, handleL
               <CommentIcon/>
             </ExpandMore>
           </div>
+          <span style={{marginLeft: "auto", marginRight: "10px"}}>
+          <Chip variant="outlined" key={-1} label={"Likes: " + post.likeCount} color="primary" sx={{margin: "5px 10px 0 0", padding: "2px", fontSize: "0.8rem"}} ></Chip>
+          {post.categories.map( (category, index) => ( <Chip key={index} variant='outlined' label={"Category: " + category} sx={{margin: "5px 10px 0 0", padding: "2px", fontSize: "0.8rem"}} ></Chip>))}
+          </span>
       </CardActions>
   )
 }
 
 
-export default function FeedCard({allLikes, profile, post, isOwner, alertError, alertSuccess, updateFeed, removeFromFeed}) {
+export default function FeedCard({allLikes, addToLikes, profile, post, isOwner, alertError, alertSuccess, updateFeed, removeFromFeed}) {
+  const dispatch = useDispatch();
+
   /* State Hook For Expanding The Comments */
   const [expanded, setExpanded] = React.useState(false);
-  
+ 
   /* State Hook For Colour Scheme */
   const [color, setColor] = React.useState("grey");
 
   // /* State Hook For likes */
-  const [likes, setLikes] = React.useState(false);
   const handleLikes = () => {
-    const data = {
-      type: "Like", 
-      summary: profile.displayName + " likes your post",
-      context: "https://www.w3.org/ns/activitystreams",
-      object: post.id, 
-      author_url: profile.id
-    }
-    if (color !== "grey"){
-      deleteLikes(post, post.id)
-      .then( res => { 
-        alertSuccess("Success: Delete Like!");
-        setColor("grey")
-        setLikes(!likes)
-      })
-      .catch( err => {console.log(err)
-        alertError("Error: Could Not Delete Like!");
-      } );
-    }else{
+    if (! allLikes.includes(post.id)) {
       createPostLikes(post, set("id")(profile.url)(profile))
-      .then( res => { 
-        alertSuccess("Success: Created New Like!");
-        setColor("secondary")
-        setLikes(!likes)
-      })
-      .catch( err => {console.log(err)
-        alertError("Error: Could Not Create Like!");
-      } );
-      
+        .then( res => { 
+          dispatch(updateInboxItem( update("likeCount")(x => x + 1)(post) ));
+          addToLikes(post.id);
+          alertSuccess("Success: Created New Like!");
+          setColor("secondary");
+        })
+        .catch( err => {console.log(err)
+          alertError("Error: Could Not Create Like!");
+        });
     }
   }
 
@@ -121,9 +114,9 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   const [editOpen, setEditOpen] = React.useState(false);
   const closeEditDialog = () => setEditOpen(false);
   const openEditDialog = () => {
-    setEditOpen(true);
-    setMenuOpen(false);
     setAnchorEl(undefined);
+    setMenuOpen(false);
+    setEditOpen(true);
   }
 
   /* State Hook For Opening Edit IMG Post Dialog */
@@ -135,9 +128,9 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const closeDeleteDialog = () => setDeleteOpen(false);
   const openDeleteDialog = () => {
-    setDeleteOpen(true);
-    setMenuOpen(false);
     setAnchorEl(undefined);
+    setMenuOpen(false);
+    setDeleteOpen(true);
   };
 
   /* State Hook For Opening Follow Request Dialog */
@@ -186,7 +179,6 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   /* Hook handler For Share post dialog (open/close) */
   const handleSharingUnlistedOpen = () => {
     setSharUnlistedDialogOpen(true);
-    console.log ("rendering")
   };
 
   const handleSharingUnlistedDialogClose = () => {
@@ -199,12 +191,13 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
 
   const handleAddCMClose = () => setaddCMOpen(false);
 
+
   /* This Runs When The Button To Show Comments Is Clicked */
   const handleExpandClick = () => {
     getComments(post)
       .then( res => { 
         console.log(res.data);
-        setComments(res.data.items);
+        setComments(res.data.comments ? res.data.comments : []);
         setExpanded(!expanded);
       })
       .catch( err => console.log(err) );
@@ -212,7 +205,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
   
   /* This Runs When The alllikes and post.id has changed */
   React.useEffect( () => {
-    setColor(allLikes.map(x => x.object).includes(post.id) ? "secondary" : "grey");
+    setColor(allLikes.includes(post.id) ? "secondary" : "grey");
   }, [post.id, allLikes] );
 
   return (
@@ -224,7 +217,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
             <Typography variant="caption" display="block" gutterBottom sx={{paddingTop: "5px"}}>{post.author.displayName}</Typography>
           </AvatarContainer>
         }
-        title={<Typography variant='h6'>{post.title}</Typography>}
+        title={ <Typography variant='h6'>{post.title}</Typography> }
         action={
           <IconButton aria-label="settings" onClick={handleClick}>
             {isOwner ? 
@@ -235,8 +228,9 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
         subheader={
           <span>
             <Typography variant='subheader'>{post.description}</Typography><br/>
-            <Typography variant='subheader'>{isoToHumanReadableDate( post.published )}</Typography>
-          </span> }
+            <Typography variant='subheader'>{isoToHumanReadableDate( post.published )}</Typography><br/>
+          </span> 
+          }
         disableTypography={true}
       />
       <CardContent>
@@ -244,7 +238,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
           {post.content.split("\n").map((p, index) => <Typography key={index} paragraph> {p} </Typography>)}
         </Box>}
         {(post.contentType === "text/markdown")&&<Box sx={{width: "100%", px: "20px"}}>
-          <ReactMarkdown components={{img: PostImage}}>{post.content}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeRaw]}  components={{img: PostImage}}>{post.content}</ReactMarkdown>
         </Box>}
         {post.contentType.includes("image")&&<Box sx={{width: "100%", px: "20px"}}>
           <img src={post.content} width="100%" alt={post.title}/>
@@ -255,7 +249,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
         <CardContent>
           {comments.map((comment, index) => ( 
           <Grid key={index} item xs={12}> 
-            <CommentCard allLikes={allLikes} profile={profile} removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
+            <CommentCard allLikes={allLikes} profile={profile} isOwner={post.author.id === comment.author.id} removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
           </Grid>))}
           <Grid item xs={12} sx={{marginTop: "8px"}}>
             <Card fullwidth="true" sx={{maxHeight: 200, mt:"1%"}}>
@@ -264,11 +258,7 @@ export default function FeedCard({allLikes, profile, post, isOwner, alertError, 
           </Grid>
         </CardContent>
       </Collapse>
-        <Menu
-        id="basic-menu"
-        anchorEl={anchorEl}
-        open={menuOpen}
-        onClose={handleClose} >
+        <Menu id="basic-menu" anchorEl={anchorEl} open={menuOpen} onClose={handleClose} >
           {((post.contentType === "text/markdown") || (post.contentType === "text/plain"))&&<MenuItem onClick={openEditDialog}>Edit</MenuItem>}
           {post.contentType.includes("image")&&<MenuItem onClick={openEditIMGDialog}>Edit</MenuItem>}
           <MenuItem onClick={openDeleteDialog}>Remove Post</MenuItem>

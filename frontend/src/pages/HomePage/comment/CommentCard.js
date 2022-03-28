@@ -18,6 +18,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { createCommentLikes, getCommentLikes, deleteCommentLikes } from '../../../Services/likes';
 import { set } from 'lodash/fp';
+import rehypeRaw from 'rehype-raw'
 
 const PostImage = styled('img')({width: "100%"})
 
@@ -31,7 +32,7 @@ function isoToHumanReadableDate(isoDate) {
   return dateFormat.format(date) + " - " + timeFormat.format(date);
 }
 
-export default function CommentCard({allLikes, profile, comment, alertSuccess, alertError, removeComment, editComments}) {
+export default function CommentCard({allLikes, profile, isOwner, comment, alertSuccess, alertError, removeComment, editComments}) {
   /* Hook For Like icon color */
   const [color, setColor] = React.useState("grey");
 
@@ -93,7 +94,7 @@ export default function CommentCard({allLikes, profile, comment, alertSuccess, a
   };
 
   React.useEffect( () => {
-    setColor(allLikes.map(x => x.object).includes(comment.id) ? "secondary" : "grey");
+    setColor(allLikes.includes(comment.id) ? "secondary" : "grey");
   }, [comment.id, allLikes] );
 
   return (
@@ -113,7 +114,7 @@ export default function CommentCard({allLikes, profile, comment, alertSuccess, a
             {comment.comment.split("\n").map((p, index) => <Typography key={index} paragraph> {p} </Typography>)}
           </Box>}
           {(comment.contentType === "text/markdown")&&<Box sx={{width: "100%", px: 0}}>
-            <ReactMarkdown components={{img: PostImage}}>{comment.comment}</ReactMarkdown>
+            <ReactMarkdown rehypePlugins={[rehypeRaw]} components={{img: PostImage}}>{comment.comment}</ReactMarkdown>
           </Box>}
         </CardContent>
         </Grid>
@@ -122,9 +123,9 @@ export default function CommentCard({allLikes, profile, comment, alertSuccess, a
           <IconButton aria-label="like" onClick={handleColor}>
             <FavoriteIcon color = {color}/>
           </IconButton>
-          <IconButton aria-label="settings" onClick={handleClick}>
+          {isOwner ? <IconButton aria-label="settings" onClick={handleClick}>
             <MoreVertIcon />
-          </IconButton>
+          </IconButton>: <></>} 
           </Stack>
         </Grid>
       </Grid>
