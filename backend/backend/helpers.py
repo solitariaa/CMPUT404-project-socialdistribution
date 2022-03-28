@@ -10,20 +10,15 @@ from django.conf import settings
 
 
 def get_node(url):
-    p = parse.urlparse(url)
-    hostname = f"{p.scheme}://{p.hostname}"
-    nodes = Node.objects.filter(host__contains=hostname)
+    nodes = Node.objects.filter(host__contains=parse.urlparse(url).hostname)
     return nodes[0] if len(nodes) > 0 else None
 
 
 def prepare_request(url, headers):
     node: Node = get_node(url)
     auth = None
-    p = parse.urlparse(url)
-    hostname = f"{p.scheme}://{p.hostname}"
-    print(url, node, hostname)
     if node is None:
-        print(url, node, hostname)
+        print(url, node, parse.urlparse(url).hostname)
     if node is not None and (settings.DOMAIN not in node.host or headers is None or "Authorization" not in headers):
         auth = HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)
     if node is not None and settings.DOMAIN not in node.host and headers is not None:
