@@ -51,6 +51,11 @@ class PostViewSet(viewsets.ModelViewSet):
         response.write(base64.b64decode(content))
         return response
 
+    def list(self, request, *args, **kwargs):
+        posts = self.get_queryset().filter(visibility="PUBLIC")
+        page = self.paginator.paginate_queryset(PostSerializer(posts, many=True).data, request)
+        return self.paginator.get_paginated_response(page)
+
     def get_queryset(self):
         author = self.kwargs["author"]
         return Post.objects.filter(author__local_id=author, visibility="PUBLIC", contentType__contains="text").order_by("-published")
