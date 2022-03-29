@@ -119,10 +119,7 @@ def extract_profile_image(author):
 
 
 def extract_visibility(remote_post):
-    host = remote_post["id"]
-    if host.rstrip("/") in "http://squawker-cmput404.herokuapp.com/" or host.rstrip("/") in "https://squawker-cmput404.herokuapp.com/":
-        return remote_post["visibility"].upper() if remote_post["visibility"] == "public" or remote_post["visibility"] == "friends" else remote_post["visibility"]
-    return remote_post["visibility"]
+    return remote_post["visibility"].upper() if remote_post["visibility"].lower() == "public" or remote_post["visibility"].lower() == "friends" else remote_post["visibility"]
 
 
 def extract_remote_id(url):
