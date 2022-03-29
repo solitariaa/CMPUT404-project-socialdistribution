@@ -222,7 +222,7 @@ export default function HomePage() {
                     <TabPanel value="2" sx={{p:0}}>
                         {inbox.filter(post => post.visibility === "FRIENDS").map((post, index) => (
                             (<Grid item xs={12} key={index}> 
-                                <FeedCard allLikes={allLikes} addToLikes={addToLikes} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
+                                <FeedCard allLikes={allLikes} addToLikes={addToLikes} profile={userObj} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
                             </Grid>)
                         ))}
                     </TabPanel>
@@ -230,7 +230,7 @@ export default function HomePage() {
                         <Paper sx={{p:0}}>
                             {inbox.filter(post => post.author.id === author.url).map((post, index) => (
                                 (<Grid item xs={12} key={index}> 
-                                    <FeedCard allLikes={allLikes} addToLikes={addToLikes} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
+                                    <FeedCard allLikes={allLikes} addToLikes={addToLikes} profile={userObj} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
                                 </Grid>)
                             ))}
                         </Paper>
