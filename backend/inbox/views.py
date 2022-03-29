@@ -83,6 +83,7 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
                 elif "items" in f.json():
                     remote_public_posts += f.json()["items"]
 
+        print(remote_public_posts)
         # Validate Posts
         posts = local_friend_posts + local_public_posts + remote_friend_posts + remote_public_posts
         for post in posts:
