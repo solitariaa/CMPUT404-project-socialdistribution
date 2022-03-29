@@ -31,6 +31,9 @@ def prepare_request(url, headers):
 def get(url, headers=None, params=None):
     url, auth, headers = prepare_request(url, headers)
     res = r.get(url, headers=headers, params=params, auth=auth)
+    print(url)
+    print(res.status_code)
+    print(res.json() if res.status_code == 200 and "application/json" in res.headers["Content-Type"] else None)
     return res
 
 
