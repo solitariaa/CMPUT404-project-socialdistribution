@@ -46,21 +46,18 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         # Fetch The Owner
         owner = get_object_or_404(Author, local_id=self.kwargs["author"])
 
-        # Fetch Queryset
-        queryset = self.get_queryset()
+        # Get All Local Inbox Items
+        local_items = [item.src for item in owner.inboxitem_set.filter(src__contains=settings.DOMAIN.rstrip("/"))]
+        local_friend_posts = [PostSerializer(post).data for post in Post.objects.filter(id__in=local_items).exclude(visibility="PUBLIC")]
 
-        # Check Object Permissions
-        for q in queryset:
-            self.check_object_permissions(request, q)
+        # Get All Remote Inbox Items
+        remote_friend_items = [item.src for item in owner.inboxitem_set.exclude(src__contains=settings.DOMAIN.rstrip("/"))]
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.map(lambda x: helpers.get(x), remote_friend_items)
+        remote_friend_posts = [p for p in future if "unlisted" in p and not p["unlisted"]]
 
-        # Fetch Local Posts
-        local_posts_src = [item.src for item in queryset if item.src.split("/authors/")[0] == settings.DOMAIN]
-        local_posts = [PostSerializer(p).data for p in Post.objects.filter(id__in=local_posts_src) if not p.unlisted]
-
-        # Fetch Foreign Posts
-        # with ThreadPoolExecutor(max_workers=1) as executor:
-        #   future = executor.map(lambda x: x.get_post(), [item for item in queryset if item.src.split("/authors/")[0] != settings.DOMAIN])
-        # foreign_posts = [p for p in future if "unlisted" in p and not p["unlisted"]]
+        # Get All Local Public Posts
+        local_public_posts = [PostSerializer(post).data for post in Post.objects.filter(id__contains=settings.DOMAIN.rstrip("/"), visibility="PUBLIC")]
 
         # Get List Of Remote Authors
         authors = []
@@ -70,28 +67,28 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         for future in futures:
             if "items" in future:
                 authors += future["items"]
+            elif "authors" in future:
+                authors += future["authors"]
 
         # Get Posts From Remote Authors
         urls = [helpers.extract_posts_url(author) for author in authors]
         with ThreadPoolExecutor(max_workers=1) as executor:
             futures = executor.map(lambda url: helpers.get(url), urls)
-
-        # Prepare Fetched Remote Posts
-        foreign_posts = []
+        remote_public_posts = []
         for f in futures:
             if f is not None and f.status_code == 200:
                 if "posts" in f.json():
-                    foreign_posts += f.json()["posts"]
+                    remote_public_posts += f.json()["posts"]
                 elif "items" in f.json():
-                    foreign_posts += f.json()["items"]
+                    remote_public_posts += f.json()["items"]
 
-        # Get Likes On Posts
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            futures = executor.map(lambda p: helpers.validate_post(p), foreign_posts)
-        foreign_posts = [f for f in futures]
+        # Validate Posts
+        posts = local_friend_posts + local_public_posts + remote_friend_posts + remote_public_posts
+        for post in posts:
+            helpers.validate_post(post)
+        posts = [post for post in posts if "content" in post and len(post["content"]) < 500]
 
         # Paginate Response
-        posts = local_posts + foreign_posts
         posts.sort(key=lambda x: x.get("published", '2022-03-24T18:22:07.990808-06:00'), reverse=True)
         posts = list(filter(lambda x: "image" not in x["contentType"], posts))
         page = self.paginator.paginate_queryset(posts, request)
@@ -103,7 +100,7 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
     def create(self, request, *args, **kwargs):
         author = get_object_or_404(Author, local_id=kwargs["author"])
         if request.data["type"].lower() == "post":
-            if request.data["author"]["host"].rstrip("/") == settings.DOMAIN.rstrip("/") or request.data["visibility"].lower() != "public":
+            if request.data["visibility"].lower() != "public":
                 inbox_item = InboxItem(owner=author, src=request.data["id"])
                 inbox_item.save()
                 return Response(InboxItemSerializer(inbox_item).data, status=status.HTTP_201_CREATED)
