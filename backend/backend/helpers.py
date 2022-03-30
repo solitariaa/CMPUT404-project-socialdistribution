@@ -11,7 +11,6 @@ from django.conf import settings
 
 def get_node(url):
     nodes = Node.objects.filter(host__contains=parse.urlparse(url).hostname)
-    print(parse.urlparse(url).hostname, len(nodes))
     return nodes[0] if len(nodes) > 0 else None
 
 
@@ -57,6 +56,8 @@ def put(url, data, headers=None):
 
 def get_author(author, headers=None):
     node = get_node(author)
+    if node is None:
+        return {"error": "Author Not Found!"}
     if node.host.rstrip("/") in settings.DOMAIN:
         authors = Author.objects.filter(id__contains=author)
         return AuthorSerializer(authors[0]).data if len(authors) > 0 else {"error": "Author Not Found!"}
