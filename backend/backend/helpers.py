@@ -31,7 +31,6 @@ def prepare_request(url, headers):
 def get(url, headers=None, params=None):
     url, auth, headers = prepare_request(url, headers)
     res = r.get(url, headers=headers, params=params, auth=auth)
-    print(res.status_code, url)
     return res
 
 
