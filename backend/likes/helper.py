@@ -9,12 +9,12 @@ def get_likes_helper(like_objects):
     for like in likes:
         found = False
         for author in authors:
-            if "id" in author and (author["id"].split("//")[-1].rstrip("/") == like["author"].split("//")[-1].rstrip("/")):
+            if "id" in author and (author["id"].split("/authors/")[-1].rstrip("/") == like["author"].split("/authors/")[-1].rstrip("/")):
+                print("SPLIT:", like["author"], author["id"].split("/authors/")[-1].rstrip("/"))
                 found = True
                 like["author"] = author
                 break
         if not found:
-            print(like["author"])
             like["author"] = {"error": "Author Not Found!"}
     return likes
 
