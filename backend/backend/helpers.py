@@ -11,6 +11,7 @@ from django.conf import settings
 
 def get_node(url):
     nodes = Node.objects.filter(host__contains=parse.urlparse(url).hostname)
+    print(parse.urlparse(url).hostname, len(nodes))
     return nodes[0] if len(nodes) > 0 else None
 
 
@@ -66,10 +67,12 @@ def get_author(author, headers=None):
 def get_author_list(authors, headers=None):
     # Fetch Local Authors
     local_authors = [get_author(author) for author in authors if get_hostname(author) in settings.DOMAIN]
+    #print("LOCAL:", local_authors)
 
     # Fetch Remote Authors
     db.connections.close_all()
     remote_authors = [author for author in authors if get_hostname(author) not in settings.DOMAIN]
+    #print("REMOTE:", local_authors)
     with ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.map(lambda author: get_author(author), remote_authors)
 
