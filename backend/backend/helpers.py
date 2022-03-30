@@ -11,6 +11,7 @@ from django.conf import settings
 
 def get_node(url):
     nodes = Node.objects.filter(host__contains=parse.urlparse(url).hostname)
+    print(parse.urlparse(url).hostname, len(nodes))
     return nodes[0] if len(nodes) > 0 else None
 
 
