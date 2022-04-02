@@ -10,7 +10,6 @@ def get_likes_helper(like_objects):
         found = False
         for author in authors:
             if "id" in author and (author["id"].split("/authors/")[-1].rstrip("/") == like["author"].split("/authors/")[-1].rstrip("/")):
-                print("SPLIT:", like["author"], author["id"].split("/authors/")[-1].rstrip("/"))
                 found = True
                 like["author"] = author
                 break
