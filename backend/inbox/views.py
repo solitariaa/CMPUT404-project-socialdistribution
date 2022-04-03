@@ -130,8 +130,8 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         elif request.data["type"].lower() == "comment":
             # Save New Comment
             if "post" in request.data:
-                post: Post = get_object_or_404(Post, id=request.data["post"])
-                comment = Comment(author_url=request.data["author"]["url"], comment=request.data["comment"], contentType=request.data["contentType"], post=post)
+                post: Post = get_object_or_404(Post, local_id=request.data["post"].split("/posts/")[-1].rstrip("/"))
+                comment = Comment(author_url=request.data["author"]["url"], comment=request.data["comment"], contentType=request.data.get("contentType", Post.ContentType.PLAIN_TEXT), post=post)
                 comment.save()
 
                 # Save Notification
