@@ -17,13 +17,12 @@ import NotificationCard from './notifications/NotificationCard';
 import GithubFeedCard from './mainFeed/GithubFeedCard';
 import {styled} from '@mui/system'
 import { getNotifications } from '../../Services/notifications';
-import { getAllLikes } from '../../Services/likes';
 import { getAuthorFromStorage, setAuthorInStorage  } from '../../LocalStorage/profile';
-import { setInboxInStorage, getInboxFromStorage } from '../../LocalStorage/inbox';
-import { getFollowers } from '../../Services/followers';
 import PageviewRoundedIcon from '@mui/icons-material/PageviewRounded';
 import ReceivedURLDialogs from './postSharing/receivedURL';
 import { setInbox, pushToInbox, updateInboxItem, removeFromInbox } from '../../redux/inboxSlice';
+import { setUsers } from '../../redux/usersSlice';
+import { getAllUsers } from '../../Services/followers';
 
 const drawerWidth = 450;
 
@@ -38,10 +37,6 @@ export default function HomePage() {
 
     /* State Hook For Tab Values */
     const [value, setValue] = React.useState('1');
-
-    /* State Hook For Likes */
-    const [allLikes, setAllLikes] = React.useState([]);
-    const addToLikes = (object) => setAllLikes(concat(allLikes)(object));
 
     /* State Hook For Displaying Alerts */
     const [openAlert, setOpenAlert] = useState({isOpen: false, message: "", severity: "error"})
@@ -123,28 +118,18 @@ export default function HomePage() {
 
     /* Get Inbox From Server */
     useEffect( () => {
-        getInbox(author.url)
-            .then( res => dispatch(setInbox(res.data.items)) )
+          Promise.all([getInbox(userObj.url), getAllUsers(), getNotifications(userObj.url)])
+            .then( values => {
+                console.log(values[0].data);
+                console.log(values[1].data);
+                console.log(values[2].data);
+                dispatch(setInbox(values[0].data.items));
+                dispatch(setUsers(values[1].data.items));
+                setNotifications(values[2].data.items)
+            })
             .catch( err => console.log(err) )
-            .finally( () => console.log(inbox) )
     }, [] );
 
-    /* Get Notifications From Server  */
-    useEffect( () => {
-        getNotifications(author.url)
-            .then( res => setNotifications(res.data.items) )
-            .catch( err => console.log(err) )
-            .finally( () => console.log(notifications) )
-    }, [] );
-
-    /* Get Followers From Server  */
-    useEffect( () => {
-        getFollowers(author.id)
-            .then( res => console.log(res.data.items) )
-            .catch( err => console.log(err) )
-            .finally( () => console.log(followers) )
-    }, [] );
-    
     /* Get Github feed from Github API */
     useEffect( () => {
         const githubID = author.github.substring(author.github.lastIndexOf('/') + 1);
@@ -159,12 +144,6 @@ export default function HomePage() {
                 .catch( err => console.log(err) )
                 .finally ( () => console.log(githubFeed) )
         }
-        getAllLikes(userObj)
-        .then( res => {
-            setAllLikes(res.data.items.map(x => x.object))
-        })
-        .catch( err => console.log(err) )
-        
     }, [] );
 
   return (
@@ -215,14 +194,14 @@ export default function HomePage() {
                     <TabPanel value="1" sx={{p:0}}>
                         {inbox.filter(post => post.visibility === "PUBLIC").map((post, index) => (
                             (<Grid item xs={12} key={index}> 
-                                <FeedCard allLikes={allLikes} addToLikes={addToLikes} profile={userObj} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
+                                <FeedCard post={post} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
                             </Grid>)
                         ))}
                     </TabPanel>
                     <TabPanel value="2" sx={{p:0}}>
                         {inbox.filter(post => post.visibility === "FRIENDS").map((post, index) => (
                             (<Grid item xs={12} key={index}> 
-                                <FeedCard allLikes={allLikes} addToLikes={addToLikes} profile={userObj} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
+                                <FeedCard post={post} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
                             </Grid>)
                         ))}
                     </TabPanel>
@@ -230,7 +209,7 @@ export default function HomePage() {
                         <Paper sx={{p:0}}>
                             {inbox.filter(post => post.author.id === author.url).map((post, index) => (
                                 (<Grid item xs={12} key={index}> 
-                                    <FeedCard allLikes={allLikes} addToLikes={addToLikes} profile={userObj} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
+                                    <FeedCard post={post} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
                                 </Grid>)
                             ))}
                         </Paper>

@@ -1,4 +1,4 @@
-import { post, get, put, del, patch } from "./requests";
+import { post, get } from "./requests";
 
 
 export function createCommentLikes(commentData, sender){
@@ -39,4 +39,8 @@ export function getLikes(postData){
 
 export function getAllLikes(author){
     return get(author.url + "liked/");
+}
+
+export function saveLiked(author, likeObject){
+    return post(author.url + "liked/", likeObject);
 }

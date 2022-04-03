@@ -17,11 +17,12 @@ import { setInbox } from '../../redux/inboxSlice';
 import { getFollowers, getFollowing, getAllUsers } from '../../Services/followers';
 import { getInbox } from '../../Services/posts';
 import { setAuthorInStorage, getAuthorFromStorage } from '../../LocalStorage/profile';
-import { setInboxInStorage, getInboxFromStorage } from '../../LocalStorage/inbox';
+import { getAllLikes } from '../../Services/likes';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { setFollowers } from '../../redux/followersSlice';
 import { setFollowing } from '../../redux/followingsSlice'
 import { setUsers } from "../../redux/usersSlice"
+import { setLiked } from "../../redux/likedSlice"
 
 function Copyright(props) {
   return (
@@ -59,16 +60,18 @@ export default function LoginPage() {
           localStorage.setItem("token", res.data.token);
           console.log(getAuthorFromStorage());
 
-          Promise.all([getInbox(res.data.author.url), getFollowers(res.data.author.url), getFollowing(res.data.author.url), getAllUsers()])
+          Promise.all([getInbox(res.data.author.url), getFollowers(res.data.author.url), getFollowing(res.data.author.url), getAllUsers(), getAllLikes(res.data.author)])
             .then( values => {
               console.log(values[0].data);
               console.log(values[1].data);
               console.log(values[2].data);
               console.log(values[3].data);
+              console.log(values[4].data);
               dispatch(setInbox(values[0].data.items));
               dispatch(setFollowers(values[1].data.items));
               dispatch(setFollowing(values[2].data.items));
               dispatch(setUsers(values[3].data.items));
+              dispatch(setLiked(values[4].data.items));
               goToHome();
           })
         })
