@@ -4,7 +4,7 @@ from comment.serializers import CommentSerializer
 from .models import Post
 from authors.serializers import AuthorSerializer
 from likes.models import Likes
-from comment.views import CommentViewSet
+from comment.helpers import get_comments
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -20,7 +20,7 @@ class PostSerializer(serializers.ModelSerializer):
     def get_commentsSrc(self, obj: Post):
         # print(CommentViewSet.as_view({"get": "list"})(post=obj.local_id, author=obj.author.local_id))
         comments = obj.comment_set.all()
-        comments = [CommentSerializer(c).data for c in comments]
+        comments = get_comments(comments)
         return {"type": "comments",
                 "post": obj.id,
                 "id": f"{obj.id.rstrip('/')}/comments/",
@@ -30,5 +30,5 @@ class PostSerializer(serializers.ModelSerializer):
         return f"{obj.id}/comments/"
 
     def get_likeCount(self, obj: Post):
-        likes = Likes.objects.filter(object__contains=obj.id)
+        likes = Likes.objects.filter(object=obj.id)
         return len(likes)

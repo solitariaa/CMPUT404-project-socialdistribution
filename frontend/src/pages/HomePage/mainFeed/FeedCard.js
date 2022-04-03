@@ -25,7 +25,7 @@ import AddCommentsDialog from "../comment/addCommentDialog"
 import Button from '@mui/material/Button';
 import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
 import { concat } from 'lodash/fp';
-import { createPostLikes, getLikes, deleteLikes} from '../../../Services/likes';
+import { createPostLikes, saveLiked} from '../../../Services/likes';
 import FollowRequestDialog from '../../../Components/FollowRequestDialog';
 import { getAuthorFromStorage } from '../../../LocalStorage/profile';
 import { set } from 'lodash/fp';
@@ -33,7 +33,8 @@ import SharingDialog from "../postSharing/sharingDialog";
 import SharingUnlistedDialog from "../postSharing/sharingUnlistedDialog";
 import rehypeRaw from 'rehype-raw'
 import { Chip } from '@mui/material';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { addLiked } from '../../../redux/likedSlice';
 import { updateInboxItem } from '../../../redux/inboxSlice';
 import { update } from 'lodash/fp';
 
@@ -85,7 +86,7 @@ function CardButtons({isOwner, handleColor, expanded, handleExpandClick, handleL
 }
 
 
-export default function FeedCard({allLikes, addToLikes, profile, post, isOwner, alertError, alertSuccess, updateFeed, removeFromFeed}) {
+export default function FeedCard({post, alertError, alertSuccess, updateFeed, removeFromFeed}) {
   const dispatch = useDispatch();
 
   /* State Hook For Expanding The Comments */
@@ -94,13 +95,31 @@ export default function FeedCard({allLikes, addToLikes, profile, post, isOwner, 
   /* State Hook For Colour Scheme */
   const [color, setColor] = React.useState("grey");
 
+  /* State Hook For Likes */
+  const allLikes = useSelector( state => state.liked.items );
+
+  /* State Hook For Current User */
+  const profile = useSelector( state => state.profile );
+
+  /* Boolean Indicating Whether Or Not The Post Is Owned By The Current User */
+  const isOwner = post.author.id === profile.url
+
   // /* State Hook For likes */
   const handleLikes = () => {
     if (! allLikes.includes(post.id)) {
       createPostLikes(post, set("id")(profile.url)(profile))
-        .then( res => { 
+        .then( _ => {
+          const data = {
+              "summary": `${profile.displayName} Likes Your Post!`,         
+              "type": "Like",
+              "author": set("id")(profile.url)(profile),    
+              "object": post.id
+          };
+          return saveLiked(profile, data);
+        } )
+        .then( _ => { 
           dispatch(updateInboxItem( update("likeCount")(x => x + 1)(post) ));
-          addToLikes(post.id);
+          dispatch( addLiked(post) );
           alertSuccess("Success: Created New Like!");
           setColor("secondary");
         })
@@ -140,9 +159,9 @@ export default function FeedCard({allLikes, addToLikes, profile, post, isOwner, 
 
   /* State Hook For Comments */
   const [comments, setComments] = React.useState([]);
-  const addComment = comment => setComments(concat(comments)(comment));
   const removeComment = comment => setComments(comments.filter(x => x.id !== comment.id));
   const editComment = comment => setComments(comments.map(x => x.id === comment.id ? comment : x))
+  const likeComment = commentID => setComments( comments.map( comment => comment.id === commentID ? update("likeCount")(x => x + 1)(comment) : comment ) );
 
   /* State Hook For Menu (edit/remove) */
   const [anchorEl, setAnchorEl] = React.useState(undefined);
@@ -197,6 +216,7 @@ export default function FeedCard({allLikes, addToLikes, profile, post, isOwner, 
     getComments(post)
       .then( res => { 
         console.log(res.data);
+        console.log(res.headers)
         setComments(res.data.comments ? res.data.comments : []);
         setExpanded(!expanded);
       })
@@ -249,7 +269,7 @@ export default function FeedCard({allLikes, addToLikes, profile, post, isOwner, 
         <CardContent>
           {comments.map((comment, index) => ( 
           <Grid key={index} item xs={12}> 
-            <CommentCard allLikes={allLikes} profile={profile} isOwner={post.author.id === comment.author.id} removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
+            <CommentCard post={post} allLikes={allLikes} profile={profile} isOwner={profile.url === comment.author.id && profile.host === post.author.host} removeComment={removeComment} editComments={editComment} likeComment={likeComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
           </Grid>))}
           <Grid item xs={12} sx={{marginTop: "8px"}}>
             <Card fullwidth="true" sx={{maxHeight: 200, mt:"1%"}}>
@@ -266,7 +286,7 @@ export default function FeedCard({allLikes, addToLikes, profile, post, isOwner, 
       <DeletePostDialog post={post} alertSuccess={alertSuccess} alertError={alertError} open={deleteOpen} handleClose={closeDeleteDialog} removeFromFeed={removeFromFeed} />
       <EditPostDialog post={post} open={editOpen} onClose={closeEditDialog} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} />
       <EditIMGDialog post={post} open={editIMGOpen} onClose={closeEditIMGDialog} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} />
-      <AddCommentsDialog open={addCMOpen} handleAddCMClose={handleAddCMClose} post={post} addComment={addComment} alertSuccess={alertSuccess} alertError={alertError}></AddCommentsDialog>
+      <AddCommentsDialog open={addCMOpen} handleAddCMClose={handleAddCMClose} post={post} setComments={setComments} alertSuccess={alertSuccess} alertError={alertError}></AddCommentsDialog>
       <FollowRequestDialog  authorToFollow={post.author} alertSuccess={alertSuccess} alertError={alertError} open={followOpen} handleClose={closeFollowDialog} />
       <SharingDialog open ={openSharingDialog} onClose={handleSharingDialogClose} post={post} alertSuccess={alertSuccess} alertError={alertError}></SharingDialog>
       <SharingUnlistedDialog open ={openSharUnlistedDialog} onClose={handleSharingUnlistedDialogClose} post={post} alertSuccess={alertSuccess} alertError={alertError}></SharingUnlistedDialog>

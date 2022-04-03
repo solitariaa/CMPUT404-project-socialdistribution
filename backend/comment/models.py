@@ -10,7 +10,7 @@ class Comment(models.Model):
         COMMON_MARK = "text/markdown"
         PLAIN_TEXT = "text/plain"
 
-    type = models.CharField(max_length=100, default="comments")
+    type = models.CharField(max_length=100, default="comment")
     author_url = models.URLField(max_length=250)
     comment = models.TextField(blank=False)
     contentType = models.CharField(max_length=350, choices=ContentType.choices)

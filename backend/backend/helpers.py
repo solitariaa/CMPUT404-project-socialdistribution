@@ -1,3 +1,5 @@
+import json
+
 from django import db
 from concurrent.futures import ThreadPoolExecutor
 from authors.models import Author
@@ -24,6 +26,8 @@ def prepare_request(url, headers):
     if node is not None and settings.DOMAIN not in node.host and headers is not None:
         headers.pop("Authorization")
     if node is not None and (node.host in "http://squawker-cmput404.herokuapp.com/api/" or node.host in "https://squawker-cmput404.herokuapp.com/api/"):
+        if "/api/" not in url:
+            url = "http://squawker-cmput404.herokuapp.com/api" + url.split("squawker-cmput404.herokuapp.com")[1]
         url = url.rstrip("/")
     return url, auth, headers
 
@@ -70,7 +74,6 @@ def get_author_list(authors, headers=None):
     local_authors = [get_author(author) for author in authors if get_hostname(author) in settings.DOMAIN]
 
     # Fetch Remote Authors
-    db.connections.close_all()
     remote_authors = [author for author in authors if get_hostname(author) not in settings.DOMAIN]
     with ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.map(lambda author: get_author(author), remote_authors)
@@ -117,7 +120,7 @@ def extract_inbox_url(author):
 
 
 def extract_profile_image(author):
-    return author["profileImage"] if "http://" in author["profileImage"] else "https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png"
+    return author["profileImage"] if ("http://" in author["profileImage"] or "https://" in author["profileImage"]) else "https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png"
 
 
 def extract_visibility(remote_post):
@@ -132,8 +135,7 @@ def extract_remote_id(url):
 
 
 def extract_content_type(remote_post):
-    host = get_hostname(remote_post["id"])
-    if host.rstrip("/") in "http://squawker-cmput404.herokuapp.com/" or host.rstrip("/") in "https://squawker-cmput404.herokuapp.com/":
+    if "content_type" in remote_post:
         return remote_post["content_type"]
     return remote_post["contentType"]
 
@@ -168,3 +170,22 @@ def validate_post(post):
     post["likeCount"] = extract_likes(post)
     return post
 
+
+def validate_comment(comment):
+    comment["likeCount"] = extract_likes(comment)
+    comment["id"] = extract_remote_id(comment["id"])
+    comment["url"] = extract_remote_id(comment["id"])
+    comment["contentType"] = extract_content_type(comment)
+    comment["author"] = validate_author(comment["author"])
+    return comment
+
+
+def validate_proxy(res):
+    if type(res) == bytes:
+        res = json.loads(res.decode('utf-8'))
+    if "type" in res and "comment" == res["type"].lower():
+        return validate_comment(res)
+    elif "type" in res and "comments" == res["type"].lower():
+        res["comments"] = [validate_comment(comment) for comment in res["comments"]]
+        return res
+    return res

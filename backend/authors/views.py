@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework import status
-from rest_framework.decorators import action, renderer_classes
+from rest_framework.decorators import action
 from django.db.utils import IntegrityError
 from .models import Author, Avatar
 from django.contrib.auth.models import User
@@ -19,8 +19,8 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.contrib import auth
 from rest_framework.authtoken.models import Token
-from likes.models import Likes
-from likes.helper import get_liked
+from likes.models import Liked
+from likes.serializers import LikedSerializer
 
 
 class CustomPageNumberPagination(PageNumberPagination):
@@ -36,7 +36,9 @@ class AuthorViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):
-        return Author.objects.all().order_by("displayName")
+        nodes = Node.objects.all()
+        node_users = [node.username for node in nodes]
+        return Author.objects.all().exclude(displayName__in=node_users).order_by("displayName")
 
     def list(self, request, *args, **kwargs):
         authors = [AuthorSerializer(author).data for author in self.get_queryset()]
@@ -50,11 +52,19 @@ class AuthorViewSet(viewsets.ModelViewSet):
         page = self.paginator.paginate_queryset(authors, request)
         return self.paginator.get_paginated_response(page)
 
-    @action(detail=True, methods=['GET'])
+    @action(detail=True, methods=['GET', "POST"])
     def liked(self, request, pk):
-        author: Author = get_object_or_404(Author, local_id=pk)
-        likes = Likes.objects.all().filter(author_url=author.id)
-        return Response(get_liked(likes), content_type="application/json")
+        if request.method == "GET":
+            author: Author = get_object_or_404(Author, local_id=pk)
+            liked = author.liked_set.all()
+            return Response({"type": "liked", "items": LikedSerializer(liked, many=True).data}, content_type="application/json")
+        request.data.pop("@context", "")
+        author = get_object_or_404(Author, local_id=pk)
+        request.data["author"] = author
+        like = Liked.objects.create(**request.data)
+        response = LikedSerializer(like).data
+        response["author"] = AuthorSerializer(author).data
+        return Response(response, content_type="application/json")
 
     @action(detail=False, methods=['post'])
     def register(self, request):
