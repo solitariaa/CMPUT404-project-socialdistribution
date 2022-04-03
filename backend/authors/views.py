@@ -1,9 +1,17 @@
+import base64
+from nodes.models import Node
+from concurrent.futures import ThreadPoolExecutor
+from backend import helpers
+from django.conf import settings
+from functools import reduce
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework import status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, renderer_classes
 from django.db.utils import IntegrityError
-from .models import Author
+from .models import Author, Avatar
 from django.contrib.auth.models import User
 from .serializers import AuthorSerializer
 from rest_framework import viewsets
@@ -11,6 +19,8 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.contrib import auth
 from rest_framework.authtoken.models import Token
+from likes.models import Likes
+from likes.helper import get_liked
 
 
 class CustomPageNumberPagination(PageNumberPagination):
@@ -21,11 +31,30 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication, BasicAuthentication]
     serializer_class = AuthorSerializer
-    queryset = Author.objects.all()
     pagination_class = CustomPageNumberPagination
-    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Author.objects.all().order_by("displayName")
+
+    def list(self, request, *args, **kwargs):
+        authors = [AuthorSerializer(author).data for author in self.get_queryset()]
+        if request.query_params.get("remote", "false") == "true":
+            nodes = Node.objects.all()
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                futures = executor.map(lambda node: helpers.get_authors(node), [node.host for node in nodes if node.host.rstrip("/") not in settings.DOMAIN.rstrip("/")])
+            remote_authors = reduce(lambda acc, x: acc + (x["items"] if "items" in x else []), futures, [])
+            authors += [helpers.validate_author(author) for author in remote_authors]
+            authors.sort(key=lambda x: x["displayName"])
+        page = self.paginator.paginate_queryset(authors, request)
+        return self.paginator.get_paginated_response(page)
+
+    @action(detail=True, methods=['GET'])
+    def liked(self, request, pk):
+        author: Author = get_object_or_404(Author, local_id=pk)
+        likes = Likes.objects.all().filter(author_url=author.id)
+        return Response(get_liked(likes), content_type="application/json")
 
     @action(detail=False, methods=['post'])
     def register(self, request):
@@ -56,10 +85,25 @@ class AuthorViewSet(viewsets.ModelViewSet):
         user.auth_token.delete()
         return Response({"message": "Succesfully Logged Out!"}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['GET', 'PATCH'])
+    def avatar(self, request, pk):
+        author: Author = get_object_or_404(Author, local_id=pk)
+        avatar: Avatar = author.avatar
+        if request.method == "GET":
+            string = avatar.content
+            content = string.split("base64,")[1]
+            mimetype = string.split(";base64,")[0].split(":")[1]
+            response = HttpResponse(content_type=mimetype)
+            response.write(base64.b64decode(content))
+            return response
+        avatar.content = request.data["content"]
+        avatar.save()
+        return Response({"ok": "Successfully Changed Avatar!"}, status=status.HTTP_200_OK)
+
     def get_permissions(self):
         """Manages Permissions On A Per-Action Basis"""
-        if self.action in ['login']:
-            permission_classes = [AllowAny]
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsAuthenticated]
         else:
             permission_classes = [AllowAny]
         return [permission() for permission in permission_classes]

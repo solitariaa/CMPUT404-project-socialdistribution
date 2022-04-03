@@ -16,7 +16,7 @@ function getCookie(name) {
 }
 
 export function post(path, data) {
-    return axios.post(path, data, {headers: {"Authorization": "Token " + localStorage.getItem("token"), "X-CSRFToken": getCookie('csrftoken')}});
+    return axios.post(path, data, {headers: {"Authorization": "Token " + localStorage.getItem("token"), "X-CSRFToken": getCookie('csrftoken'), "Content-Type": "application/json"}});
 }
 
 export function put(path, data) {
@@ -29,6 +29,10 @@ export function patch(path, data) {
 
 export function get(path) {
     return axios.get(path, {headers: {"Authorization": "Token " + localStorage.getItem("token")}});
+}
+
+export function getWithParams(path, params) {
+    return axios.get(path, {headers: {"Authorization": "Token " + localStorage.getItem("token")}, params: params});
 }
 
 export function del(path) {

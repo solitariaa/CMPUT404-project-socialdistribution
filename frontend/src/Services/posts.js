@@ -1,8 +1,6 @@
 import { post, get, put, del } from "./requests";
 
 export function getInbox(authorID) {
-    console.log("authors/" + authorID + "inbox/")
-    console.log(authorID)
     return get("authors/" + authorID + "inbox/");
 }
 
@@ -18,7 +16,12 @@ export function deletePost(postID){
     return del(postID);
 }
 
+export function getUnlistedPost(url){
+    return get(url);
+}
+
 export function getPost(data, authorID, postID){
     const url = "authors/" + authorID + "/posts/" + postID + "/"
     return get(url.replaceAll("/", "%2F"), data);
 }
+

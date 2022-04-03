@@ -14,8 +14,14 @@ import { useNavigate } from 'react-router-dom';
 import {  useDispatch } from 'react-redux';
 import { login } from '../../redux/profileSlice';
 import { setInbox } from '../../redux/inboxSlice';
+import { getFollowers, getFollowing, getAllUsers } from '../../Services/followers';
 import { getInbox } from '../../Services/posts';
+import { setAuthorInStorage, getAuthorFromStorage } from '../../LocalStorage/profile';
+import { setInboxInStorage, getInboxFromStorage } from '../../LocalStorage/inbox';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { setFollowers } from '../../redux/followersSlice';
+import { setFollowing } from '../../redux/followingsSlice'
+import { setUsers } from "../../redux/usersSlice"
 
 function Copyright(props) {
   return (
@@ -47,18 +53,24 @@ export default function LoginPage() {
       axios.post("/api/authors/login/", data)
         .then((res) => {
 
-            /* Set User Credentials */
-            dispatch(login(res.data.author));
-            localStorage.setItem("token", res.data.token);
-            localStorage.setItem("author",res.data.author);
+          /* Set User Credentials */
+          dispatch(login(res.data.author));
+          setAuthorInStorage(res.data.author);
+          localStorage.setItem("token", res.data.token);
+          console.log(getAuthorFromStorage());
 
-            /* Fetch Inbox */
-            getInbox(res.data.author.url)
-                .then( res2 => {
-                  dispatch(setInbox(res2.data.items));
-                  goToHome();
-                })
-                .catch( err => console.log(err) )
+          Promise.all([getInbox(res.data.author.url), getFollowers(res.data.author.url), getFollowing(res.data.author.url), getAllUsers()])
+            .then( values => {
+              console.log(values[0].data);
+              console.log(values[1].data);
+              console.log(values[2].data);
+              console.log(values[3].data);
+              setInboxInStorage(values[0].data.items);
+              dispatch(setFollowers(values[1].data.items));
+              dispatch(setFollowing(values[2].data.items));
+              dispatch(setUsers(values[3].data.items));
+              goToHome();
+          })
         })
         .catch( err => showError(err.response.data.error ? err.response.data.error : "Error Logging In!") );
     } else {

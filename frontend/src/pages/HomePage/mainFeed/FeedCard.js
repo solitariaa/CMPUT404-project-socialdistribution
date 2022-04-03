@@ -25,6 +25,14 @@ import AddCommentsDialog from "../comment/addCommentDialog"
 import Button from '@mui/material/Button';
 import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
 import { concat } from 'lodash/fp';
+import { createPostLikes, getLikes, deleteLikes} from '../../../Services/likes';
+import FollowRequestDialog from '../../../Components/FollowRequestDialog';
+import { getAuthorFromStorage } from '../../../LocalStorage/profile';
+import { set } from 'lodash/fp';
+import SharingDialog from "../postSharing/sharingDialog";
+import SharingUnlistedDialog from "../postSharing/sharingUnlistedDialog";
+import rehypeRaw from 'rehype-raw'
+import { Chip } from '@mui/material';
 
 const AvatarContainer = styled('div')({display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "125px"});
 
@@ -51,13 +59,13 @@ const ExpandMore = styled((props) => {
   }),
 }));
 
-function CardButtons({isOwner, handleColor, expanded, handleExpandClick, color}) {
+function CardButtons({isOwner, handleColor, expanded, handleExpandClick, handleLikes, color, handleSharingDialogClickOpen, handleSharingUnlistedOpen, post}) {
   return (
       <CardActions disableSpacing>
-          <IconButton aria-label="like" onClick={handleColor}>
-            <FavoriteIcon color = {color}/>
+          <IconButton aria-label="like" onClick={handleLikes} >
+            <FavoriteIcon color={color} />
           </IconButton>
-          <IconButton aria-label="share">
+          <IconButton aria-label="share" onClick={post.unlisted !== true ? handleSharingDialogClickOpen:handleSharingUnlistedOpen}>
             <ShareIcon />
           </IconButton>
           <div sx={{pr:8}}>
@@ -65,22 +73,63 @@ function CardButtons({isOwner, handleColor, expanded, handleExpandClick, color})
               <CommentIcon/>
             </ExpandMore>
           </div>
+          <span style={{marginLeft: "auto", marginRight: "10px"}}>
+          <Chip variant="outlined" key={-1} label={"Likes: " + post.likeCount} color="primary" sx={{margin: "5px 10px 0 0", padding: "2px", fontSize: "0.8rem"}} ></Chip>
+          {post.categories.map( (category, index) => ( <Chip key={index} variant='outlined' label={"Category: " + category} sx={{margin: "5px 10px 0 0", padding: "2px", fontSize: "0.8rem"}} ></Chip>))}
+          </span>
       </CardActions>
   )
 }
 
 
-export default function FeedCard({post, isOwner, alertError, alertSuccess, updateFeed, removeFromFeed}) {
+export default function FeedCard({allLikes, profile, post, isOwner, alertError, alertSuccess, updateFeed, removeFromFeed}) {
   /* State Hook For Expanding The Comments */
   const [expanded, setExpanded] = React.useState(false);
-
+ 
   /* State Hook For Colour Scheme */
   const [color, setColor] = React.useState("grey");
+
+  // /* State Hook For likes */
+  const [likes, setLikes] = React.useState(false);
+  const handleLikes = () => {
+    const data = {
+      type: "Like", 
+      summary: profile.displayName + " likes your post",
+      context: "https://www.w3.org/ns/activitystreams",
+      object: post.id, 
+      author: profile
+    }
+    console.log(data);
+    if (color !== "grey"){
+      deleteLikes(post, post.id)
+      .then( res => { 
+        alertSuccess("Success: Delete Like!");
+        setColor("grey")
+        setLikes(!likes)
+      })
+      .catch( err => {console.log(err)
+        alertError("Error: Could Not Delete Like!");
+      } );
+    }else{
+      createPostLikes(post, set("id")(profile.url)(profile))
+      .then( res => { 
+        alertSuccess("Success: Created New Like!");
+        setColor("secondary")
+        setLikes(!likes)
+      })
+      .catch( err => {console.log(err)
+        alertError("Error: Could Not Create Like!");
+      } );
+      
+    }
+  }
 
   /* State Hook For Opening Edit Post Dialog */
   const [editOpen, setEditOpen] = React.useState(false);
   const closeEditDialog = () => setEditOpen(false);
-  const openEditDialog = () => setEditOpen(true);
+  const openEditDialog = () => {
+    setEditOpen(true);
+  }
 
   /* State Hook For Opening Edit IMG Post Dialog */
   const [editIMGOpen, setEditIMGOpen] = React.useState(false);
@@ -92,8 +141,12 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
   const closeDeleteDialog = () => setDeleteOpen(false);
   const openDeleteDialog = () => {
     setDeleteOpen(true);
-    setAnchorEl(false);
   };
+
+  /* State Hook For Opening Follow Request Dialog */
+  const [followOpen, setFollowOpen] = React.useState(false);
+  const closeFollowDialog = () => setFollowOpen(false);
+  const openFollowDialog = () => setFollowOpen(post.author.id !== getAuthorFromStorage().id);
 
   /* State Hook For Comments */
   const [comments, setComments] = React.useState([]);
@@ -102,14 +155,45 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
   const editComment = comment => setComments(comments.map(x => x.id === comment.id ? comment : x))
 
   /* State Hook For Menu (edit/remove) */
-  const [anchorEl, setAnchorEl] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState(undefined);
+  const [menuOpen, setMenuOpen] = React.useState(false);
 
   /* State Hook For Adding comment*/
   const [addCMOpen, setaddCMOpen] = React.useState(false);
 
+  /* State Hook For Opening of Share post dialog*/
+  const [openSharingDialog, setSharingDialogOpen] = React.useState(false);
+
+  /* State Hook For Opening of Share unlisted post dialog*/
+  const [openSharUnlistedDialog, setSharUnlistedDialogOpen] = React.useState(false);
+
   /* Hook handler For Menu (edit/remove) */
-  const handleClick = event => setAnchorEl(event.currentTarget);
-  const handleClose = () => setAnchorEl(null);
+  const handleClick = event => { 
+    setAnchorEl(event.currentTarget);
+    setMenuOpen(true);
+  }
+  const handleClose = () => { 
+    setMenuOpen(false);
+    setAnchorEl(null);
+  }
+
+  /* Hook handler For Share post dialog (open/close) */
+  const handleSharingDialogClickOpen = () => {
+    setSharingDialogOpen(true);
+  };
+
+  const handleSharingDialogClose = () => {
+    setSharingDialogOpen(false);
+  };
+
+  /* Hook handler For Share post dialog (open/close) */
+  const handleSharingUnlistedOpen = () => {
+    setSharUnlistedDialogOpen(true);
+  };
+
+  const handleSharingUnlistedDialogClose = () => {
+    setSharUnlistedDialogOpen(false);
+  };
   
   const handleColor = (event) =>setColor("secondary");
 
@@ -117,26 +201,33 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
 
   const handleAddCMClose = () => setaddCMOpen(false);
 
+
   /* This Runs When The Button To Show Comments Is Clicked */
   const handleExpandClick = () => {
-    getComments(post.id)
+    getComments(post)
       .then( res => { 
-        setComments(res.data.items);
+        console.log(res.data);
+        setComments(res.data.comments ? res.data.comments : []);
         setExpanded(!expanded);
       })
       .catch( err => console.log(err) );
   };
+  
+  /* This Runs When The alllikes and post.id has changed */
+  React.useEffect( () => {
+    setColor(allLikes.map(x => x.object).includes(post.id) ? "secondary" : "grey");
+  }, [post.id, allLikes] );
 
   return (
     <Card sx={{m: "1px"}}>
       <CardHeader
         avatar={ 
-          <AvatarContainer onClick={() => console.log(post.author.id)} >
+          <AvatarContainer onClick={() => openFollowDialog() } >
             <Avatar src={post.author.profileImage} sx={{ width: 64, height: 64,  }} aria-label="recipe" />
             <Typography variant="caption" display="block" gutterBottom sx={{paddingTop: "5px"}}>{post.author.displayName}</Typography>
           </AvatarContainer>
         }
-        title={<Typography variant='h6'>{post.title}</Typography>}
+        title={ <Typography variant='h6'>{post.title}</Typography> }
         action={
           <IconButton aria-label="settings" onClick={handleClick}>
             {isOwner ? 
@@ -147,8 +238,9 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
         subheader={
           <span>
             <Typography variant='subheader'>{post.description}</Typography><br/>
-            <Typography variant='subheader'>{isoToHumanReadableDate( post.published )}</Typography>
-          </span> }
+            <Typography variant='subheader'>{isoToHumanReadableDate( post.published )}</Typography><br/>
+          </span> 
+          }
         disableTypography={true}
       />
       <CardContent>
@@ -156,32 +248,27 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
           {post.content.split("\n").map((p, index) => <Typography key={index} paragraph> {p} </Typography>)}
         </Box>}
         {(post.contentType === "text/markdown")&&<Box sx={{width: "100%", px: "20px"}}>
-          <ReactMarkdown components={{img: PostImage}}>{post.content}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeRaw]}  components={{img: PostImage}}>{post.content}</ReactMarkdown>
         </Box>}
         {post.contentType.includes("image")&&<Box sx={{width: "100%", px: "20px"}}>
           <img src={post.content} width="100%" alt={post.title}/>
         </Box>}
       </CardContent>
-      <CardButtons isOwner={isOwner} handleColor={handleColor} expanded={expanded} handleExpandClick={handleExpandClick} color={color} />
+      <CardButtons isOwner={isOwner} handleColor={handleColor} expanded={expanded} handleExpandClick={handleExpandClick} handleLikes = {handleLikes} color={color} handleSharingDialogClickOpen={handleSharingDialogClickOpen} handleSharingUnlistedOpen={handleSharingUnlistedOpen} post={post}/>
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         <CardContent>
-          {comments.map((comment) => ( <Grid item xs={12}> <CommentCard removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth /> </Grid>))}
+          {comments.map((comment, index) => ( 
+          <Grid key={index} item xs={12}> 
+            <CommentCard allLikes={allLikes} profile={profile} isOwner={post.author.id === comment.author.id} removeComment={removeComment} editComments={editComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
+          </Grid>))}
           <Grid item xs={12} sx={{marginTop: "8px"}}>
-            <Card fullwidth sx={{maxHeight: 200, mt:"1%"}}>
+            <Card fullwidth="true" sx={{maxHeight: 200, mt:"1%"}}>
             <Button disableElevation={false} sx={{minHeight: "100px", fontSize: "1.15rem"}}  onClick={handleAddCMClickOpen} fullWidth>Add Comment</Button>
             </Card>
           </Grid>
         </CardContent>
       </Collapse>
-        <Menu
-        id="basic-menu"
-        anchorEl={anchorEl}
-        open={anchorEl}
-        onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': 'basic-button',
-        }}
-        >
+        <Menu id="basic-menu" anchorEl={anchorEl} open={menuOpen} onClose={handleClose} >
           {((post.contentType === "text/markdown") || (post.contentType === "text/plain"))&&<MenuItem onClick={openEditDialog}>Edit</MenuItem>}
           {post.contentType.includes("image")&&<MenuItem onClick={openEditIMGDialog}>Edit</MenuItem>}
           <MenuItem onClick={openDeleteDialog}>Remove Post</MenuItem>
@@ -190,6 +277,9 @@ export default function FeedCard({post, isOwner, alertError, alertSuccess, updat
       <EditPostDialog post={post} open={editOpen} onClose={closeEditDialog} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} />
       <EditIMGDialog post={post} open={editIMGOpen} onClose={closeEditIMGDialog} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} />
       <AddCommentsDialog open={addCMOpen} handleAddCMClose={handleAddCMClose} post={post} addComment={addComment} alertSuccess={alertSuccess} alertError={alertError}></AddCommentsDialog>
+      <FollowRequestDialog  authorToFollow={post.author} alertSuccess={alertSuccess} alertError={alertError} open={followOpen} handleClose={closeFollowDialog} />
+      <SharingDialog open ={openSharingDialog} onClose={handleSharingDialogClose} post={post} alertSuccess={alertSuccess} alertError={alertError}></SharingDialog>
+      <SharingUnlistedDialog open ={openSharUnlistedDialog} onClose={handleSharingUnlistedDialogClose} post={post} alertSuccess={alertSuccess} alertError={alertError}></SharingUnlistedDialog>
     </Card>
   );
 }

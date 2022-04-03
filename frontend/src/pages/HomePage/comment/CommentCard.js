@@ -10,12 +10,15 @@ import { styled } from '@mui/material/styles';
 import EditCommentDialog from './EditCommentDialog';
 import EditIcon from '@mui/icons-material/Edit';
 import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
-import DeleteCommentDialog from "../comment/DeleteCommentDialog"
+import DeleteCommentDialog from "./DeleteCommentDialog"
 import Stack from '@mui/material/Stack';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Box } from '@mui/system';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import { createCommentLikes, getCommentLikes, deleteCommentLikes } from '../../../Services/likes';
+import { set } from 'lodash/fp';
+import rehypeRaw from 'rehype-raw'
 
 const PostImage = styled('img')({width: "100%"})
 
@@ -29,7 +32,7 @@ function isoToHumanReadableDate(isoDate) {
   return dateFormat.format(date) + " - " + timeFormat.format(date);
 }
 
-export default function CommentCard({comment, alertSuccess, alertError, removeComment, editComments}) {
+export default function CommentCard({allLikes, profile, isOwner, comment, alertSuccess, alertError, removeComment, editComments}) {
   /* Hook For Like icon color */
   const [color, setColor] = React.useState("grey");
 
@@ -48,8 +51,39 @@ export default function CommentCard({comment, alertSuccess, alertError, removeCo
   const closeAnchorEl = () => setAnchorEl(false);
   const openAnchorEl = () => setAnchorEl(true);
 
-  const handleColor = () => setColor("secondary");
+  // /* State Hook For likes */
+  const [likes, setLikes] = React.useState(false);
 
+  const handleColor = () => {
+    const data = {
+      type: "Like", 
+      summary: profile.displayName + " likes your comment",
+      context: "https://www.w3.org/ns/activitystreams",
+      object: comment.id, 
+      author_url: profile.id
+    }
+    if (color !== "grey"){
+      deleteCommentLikes(comment, comment.id)
+      .then( res => { 
+        alertSuccess("Success: Deleted Like!");
+        setColor("grey")
+        setLikes(!likes)
+      })
+      .catch( err => {console.log(err)
+        alertError("Error: Could Not Delete Like!");
+      } );
+    }else{
+      createCommentLikes(comment, set("id")(profile.url)(profile))
+      .then( res => { 
+        alertSuccess("Success: Created New Like!");
+        setColor("secondary")
+        setLikes(!likes)
+      })
+      .catch( err => {console.log(err)
+        alertError("Error: Could Not Create Like!");
+      } );
+    }
+  }
 
   /* Hook handler For Menu (edit/remove) */
   const handleClick = (event) => {
@@ -59,8 +93,12 @@ export default function CommentCard({comment, alertSuccess, alertError, removeCo
     setAnchorEl(null);
   };
 
+  React.useEffect( () => {
+    setColor(allLikes.map(x => x.object).includes(comment.id) ? "secondary" : "grey");
+  }, [comment.id, allLikes] );
+
   return (
-    <Card fullwidth sx={{maxHeight: 200, mt:"1%"}}>
+    <Card sx={{maxHeight: 200, mt:"1%"}}>
       <Grid container direction={'row'} spacing={12}>
         <Grid item xl={10} md={10}>
         <CardContent>
@@ -76,7 +114,7 @@ export default function CommentCard({comment, alertSuccess, alertError, removeCo
             {comment.comment.split("\n").map((p, index) => <Typography key={index} paragraph> {p} </Typography>)}
           </Box>}
           {(comment.contentType === "text/markdown")&&<Box sx={{width: "100%", px: 0}}>
-            <ReactMarkdown components={{img: PostImage}}>{comment.comment}</ReactMarkdown>
+            <ReactMarkdown rehypePlugins={[rehypeRaw]} components={{img: PostImage}}>{comment.comment}</ReactMarkdown>
           </Box>}
         </CardContent>
         </Grid>
@@ -85,16 +123,16 @@ export default function CommentCard({comment, alertSuccess, alertError, removeCo
           <IconButton aria-label="like" onClick={handleColor}>
             <FavoriteIcon color = {color}/>
           </IconButton>
-          <IconButton aria-label="settings" onClick={handleClick}>
+          {isOwner ? <IconButton aria-label="settings" onClick={handleClick}>
             <MoreVertIcon />
-          </IconButton>
+          </IconButton>: <></>} 
           </Stack>
         </Grid>
       </Grid>
       <Menu id="basic-menu" anchorEl={anchorEl} open={anchorEl} onClose={closeAnchorEl} MenuListProps={{ 'aria-labelledby': 'basic-button', }} >
           <MenuItem onClick={ () => { handleEditClickOpen(); closeAnchorEl(); } }>Edit</MenuItem>
           <MenuItem onClick={() => { handleDelClickOpen(); closeAnchorEl(); }}>Remove</MenuItem>
-        </Menu>
+      </Menu>
       <EditCommentDialog open={editOpen} onClose={handleEditClose} comment={comment} alertSuccess={alertSuccess} alertError={alertError} editComments={editComments} />
       <DeleteCommentDialog comment={comment} alertSuccess={alertSuccess} alertError={alertError} open={deleteOpen} handleClose={handleDelClose} removeComment={removeComment} />
     </Card>

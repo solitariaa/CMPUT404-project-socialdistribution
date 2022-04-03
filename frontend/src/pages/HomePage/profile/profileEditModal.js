@@ -5,11 +5,12 @@ import Badge from '@mui/material/Badge';
 import Avatar from '@mui/material/Avatar';
 import AddCircleSharpIcon from '@mui/icons-material/AddCircleSharp';
 import { useSelector, useDispatch } from 'react-redux';
-import axios from 'axios';
-import { login } from '../../../redux/profileSlice';
+import { profileEdit } from '../../../redux/profileSlice';
+import { editProfile, editGitHub } from '../../../Services/profile';
+import Paper from '@mui/material/Paper';
 
 const style = {
-    textField: { minWidth: '20rem' },
+    textField: { minWidth: '100%' },
     box: {
         position: 'absolute',
         top: '50%',
@@ -20,10 +21,12 @@ const style = {
         bgcolor: 'background.paper',
         boxShadow: 24,
         p: 4,
+        borderRadius: 5, 
     },
     avatar: {
         width: 70,
-        height: 70
+        height: 70, 
+        marginLeft: "10%", 
     },
     addIcon: {
         width: 30,
@@ -44,6 +47,7 @@ const SmallAvatar = styled(Avatar)(({ theme }) => ({
 
 
 export default function ProfileEditModal(props) {
+    const profile = useSelector(state => state.profile);
     const displayName = useSelector(state => state.profile.displayName);
     const userID = useSelector(state => state.profile.id);
     const profileImage = useSelector(state => state.profile.profileImage);
@@ -53,38 +57,46 @@ export default function ProfileEditModal(props) {
     const handleSubmit = (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        const newData = { github: data.get('github') };
-        axios.patch(`/api/authors/${userID}/`, newData).then(console.log('profile changed successfully'))
-            .catch(err => console.log(err.response.data.error));
+        const imageChanged = (image !== null);
 
-    };
+        if (imageChanged) {
+            const imageData = data.get('img');
+            const reader = new FileReader();
+            reader.readAsDataURL(imageData)
+            reader.onload = () => { 
+                editProfile(profile, reader.result, data.get('github'))
+                    .then( values => {
+                        console.log(values[1].data) ;
+                        dispatch(profileEdit(values[1].data));
+                        window.location.reload(false);
+                    })
+                    .catch( err => console.log(err) );
+            }
+        } else {
+            editGitHub(profile.url, data.get('github'))
+                .then( res => {
+                    console.log(res.data) ;
+                    dispatch(profileEdit(res.data));
+                })
+                .catch( err => console.log(err) )
+                .finally( props.onClose );
+        }
+    }
 
     const [image, _setImage] = React.useState(null);
-    const inputFileRef = React.createRef(null);
+
+    const onImageChange = (event) => {
+        if (event.target.files && event.target.files[0]) {
+            _setImage(URL.createObjectURL(event.target.files[0]));
+        }
+    };
 
     const cleanup = () => {
-        URL.revokeObjectURL(image);
-        inputFileRef.current.value = null;
-    };
-
-    const setImage = (newImage) => {
-        if (image) {
-            cleanup();
-        }
-        _setImage(newImage);
-    };
-
-    const handleOnChange = (event) => {
-        const newImage = event.target?.files?.[0];
-
-        if (newImage) {
-            setImage(URL.createObjectURL(newImage));
-        }
+        _setImage(null);
     };
 
     const cancelChanges = () => {
         cleanup();
-        _setImage(profileImage)
         props.onClose();
     }
 
@@ -99,8 +111,9 @@ export default function ProfileEditModal(props) {
                 <Typography sx={{ fontWeight: 'bold', marginBottom: '2rem' }} id="modal-modal-title" variant="h4" component="h2">
                     Edit Profile
                 </Typography>
-
+                <Paper sx={{width:"100%", height:100, p:2}}>
                 <Grid container spacing={0} justifyContent="center" direction='row' alignItems='center'>
+                    
                     <Grid item xs={3} >
 
                         <Badge
@@ -113,12 +126,12 @@ export default function ProfileEditModal(props) {
                         >
                             <Avatar alt={displayName} src={image ? image : profileImage} sx={style.avatar} />
                             <input
-                                ref={inputFileRef}
                                 accept='image/*'
                                 hidden
                                 type='file'
                                 id='profile-image-upload'
-                                onChange={handleOnChange}
+                                name='img'
+                                onChange={onImageChange}
                             />
                         </Badge></Grid>
 
@@ -132,7 +145,7 @@ export default function ProfileEditModal(props) {
                         />
                     </Grid>
                 </Grid >
-
+                </Paper>
 
                 <Stack spacing={1} sx={style.buttonContainer}>
                     <Button variant='contained' type='submit'>Save</Button>
