@@ -48,14 +48,12 @@ class LikesTests(APITestCase):
     def test_get_like(self):
         """ Ensure we can create a new account object. """
         publicUrl = f"api/authors/{self.user.author.local_id}/posts/{self.public_post.local_id}/likes/"
-        print ("##### response is: ", publicUrl)
-        # self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.user)
         publicResponse = self.client.get(publicUrl)
-        print ("##### response is: ", publicResponse)
         # self.assertEqual(publicResponse.status_code, status.HTTP_200_OK)
     
     def test_get_allLikes (self):
-        publicUrl = f"/api/authors/{self.user.author.local_id}/liked/"
+        publicUrl = f"api/authors/{self.user.author.local_id}/liked/"
         self.client.force_authenticate(user=self.user)
-        # publicResponse = self.client.get(publicUrl)
+        publicResponse = self.client.get(publicUrl)
         # self.assertEqual(publicResponse.status_code, status.HTTP_200_OK)
