@@ -141,7 +141,7 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
 
                 # Create Response
                 response = CommentSerializer(comment).data
-                response["author"] = helpers.get(comment.author_url).json()
+                response["author"] = request.data["author"]
                 return Response(response, status=status.HTTP_201_CREATED)
             return Response({"error": "'post' Field Missing!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "Invalid Type: Must Be One Of 'post', 'follow', 'comment', Or 'like'!"}, status=status.HTTP_400_BAD_REQUEST)
