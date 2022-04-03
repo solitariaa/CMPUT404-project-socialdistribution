@@ -1,3 +1,5 @@
+from backend import helpers
+import json
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -50,6 +52,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         comments = get_comments(comment_objects)
 
         # Paginate Response
+        comments.sort(key=lambda x: x["published"])
         page = self.paginator.paginate_queryset(comments, request)
 
         # Return Response
@@ -59,14 +62,27 @@ class CommentViewSet(viewsets.ModelViewSet):
         post = self.kwargs["post"]
         return Comment.objects.filter(post__local_id=post).order_by("published")
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        # Create New Comment
         post = get_object_or_404(Post, local_id=self.kwargs["post"])
-        serializer.save(author_url=self.request.data["author"]["url"], post=post)
+        author = request.data["author"]
+        serializer = CommentSerializer(data=request.data)
+        serializer.is_valid()
+        serializer.save(author_url=author["url"], post=post)
+
+        # Push The Comment To The Recipient's Inbox
+        response = dict(**serializer.data)
+        response["author"] = author
+        url = f"{response['id'].split('/posts/')[0]}/inbox/"
+        helpers.post(url, json.dumps(response), {"Content-Type": "application/json"})
+
+        # Return Response
+        return Response(response, content_type="application/json")
 
     def get_permissions(self):
         """Manages Permissions On A Per-Action Basis"""
         if self.action in ['update', 'partial_update', 'destroy']:
-            permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
+            permission_classes = [IsAuthenticated, IsPostOwnerOrAdmin]
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]

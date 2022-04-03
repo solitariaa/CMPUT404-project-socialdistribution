@@ -41,6 +41,7 @@ export default function AddCommentsDialog({open, handleAddCMClose, addComment, p
       console.log(data);
       createComment(post, data)
         .then( res => { 
+          console.log(res.data);
           addComment(res.data);
           alertSuccess("Success: Created New Comment!");
         })

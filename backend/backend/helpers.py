@@ -10,20 +10,20 @@ from django.conf import settings
 
 
 def get_node(url):
-    p = parse.urlparse(url)
-    hostname = f"{p.scheme}://{p.hostname}"
-    nodes = Node.objects.filter(host__contains=hostname)
+    nodes = Node.objects.filter(host__contains=parse.urlparse(url).hostname)
     return nodes[0] if len(nodes) > 0 else None
 
 
 def prepare_request(url, headers):
     node: Node = get_node(url)
     auth = None
-    if node is not None and settings.DOMAIN not in node.host:
+    if node is None:
+        print(url, node, parse.urlparse(url).hostname)
+    if node is not None and (settings.DOMAIN not in node.host or headers is None or "Authorization" not in headers):
         auth = HTTPBasicAuth(username=node.outbound_username, password=node.outbound_password)
-    if settings.DOMAIN not in node.host and headers is not None:
+    if node is not None and settings.DOMAIN not in node.host and headers is not None:
         headers.pop("Authorization")
-    if node.host == "http://squawker-cmput404.herokuapp.com/api/":
+    if node is not None and (node.host in "http://squawker-cmput404.herokuapp.com/api/" or node.host in "https://squawker-cmput404.herokuapp.com/api/"):
         url = url.rstrip("/")
     return url, auth, headers
 
@@ -56,6 +56,8 @@ def put(url, data, headers=None):
 
 def get_author(author, headers=None):
     node = get_node(author)
+    if node is None:
+        return {"error": "Author Not Found!"}
     if node.host.rstrip("/") in settings.DOMAIN:
         authors = Author.objects.filter(id__contains=author)
         return AuthorSerializer(authors[0]).data if len(authors) > 0 else {"error": "Author Not Found!"}
@@ -98,8 +100,9 @@ def get_likes(object_with_likes: str):
 
 
 def get_hostname(url):
-    p = parse.urlparse(url)
-    return f"{p.scheme}://{p.hostname}"
+    if parse.urlparse(url).hostname is None:
+        return ""
+    return parse.urlparse(url).hostname
 
 
 def extract_local_id(author):
@@ -108,7 +111,7 @@ def extract_local_id(author):
 
 def extract_inbox_url(author):
     host = author["host"]
-    if host == "http://squawker-cmput404.herokuapp.com/":
+    if host.rstrip("/") in "http://squawker-cmput404.herokuapp.com/" or host.rstrip("/") in "https://squawker-cmput404.herokuapp.com/":
         return f"{host}api/authors/{extract_local_id(author)}/inbox"
     return f"{host}api/authors/{extract_local_id(author)}/inbox/"
 
@@ -118,36 +121,33 @@ def extract_profile_image(author):
 
 
 def extract_visibility(remote_post):
-    host = remote_post["id"]
-    if host == "http://squawker-cmput404.herokuapp.com/":
-        return remote_post["visibility"].upper() if remote_post["visibility"] == "public" or remote_post["visibility"] == "friends" else remote_post["visibility"]
-    return remote_post["visibility"]
+    return remote_post["visibility"].upper() if remote_post["visibility"].lower() == "public" or remote_post["visibility"].lower() == "friends" else remote_post["visibility"]
 
 
 def extract_remote_id(url):
     host = get_hostname(url)
-    if host.rstrip("/") == "http://squawker-cmput404.herokuapp.com/".rstrip("/"):
-        return f"{host}/api/authors/{url.split('/authors/')[1]}"
+    if host.rstrip("/") in "http://squawker-cmput404.herokuapp.com/" or host.rstrip("/") in "https://squawker-cmput404.herokuapp.com/":
+        return f"http://{host}/api/authors/{url.split('/authors/')[1]}"
     return url
 
 
 def extract_content_type(remote_post):
     host = get_hostname(remote_post["id"])
-    if host.rstrip("/") == "http://squawker-cmput404.herokuapp.com/".rstrip("/"):
+    if host.rstrip("/") in "http://squawker-cmput404.herokuapp.com/" or host.rstrip("/") in "https://squawker-cmput404.herokuapp.com/":
         return remote_post["content_type"]
     return remote_post["contentType"]
 
 
 def extract_posts_url(author):
     host = author["host"]
-    if host == "http://squawker-cmput404.herokuapp.com/":
+    if host.rstrip("/") in "http://squawker-cmput404.herokuapp.com/" or host.rstrip("/") in "https://squawker-cmput404.herokuapp.com/":
         return f"{host}api/authors/{extract_local_id(author)}/posts"
     return f"{host}authors/{extract_local_id(author)}/posts/"
 
 
 def extract_likes(object_with_likes):
     host = get_hostname(object_with_likes["id"])
-    if host == "http://squawker-cmput404.herokuapp.com/":
+    if host.rstrip("/") in "http://squawker-cmput404.herokuapp.com/" or host.rstrip("/") in "https://squawker-cmput404.herokuapp.com/":
         return object_with_likes["num_likes"]
     return object_with_likes["likeCount"] if "likeCount" in object_with_likes else 0
 
@@ -160,7 +160,7 @@ def validate_author(author):
 
 
 def validate_post(post):
-    post["visibility"] = "PUBLIC"
+    post["visibility"] = extract_visibility(post)
     post["id"] = extract_remote_id(post["id"])
     post["url"] = extract_remote_id(post["id"])
     post["contentType"] = extract_content_type(post)

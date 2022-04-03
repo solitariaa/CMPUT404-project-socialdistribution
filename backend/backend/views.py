@@ -129,7 +129,7 @@ def proxy_requests(request, path):
     except ValidationError:  # If Path Is Not A URL, We Make The Request To Our Own Server
         status_code, content_type, response_body = proxy_selector(request, f"{settings.DOMAIN}/api/authors/{path}/")
         if content_type != "application/json":
-            response = HttpResponse(content_type=content_type)
+            response = HttpResponse(content_type=content_type, status=status_code)
             response.write(response_body)
             return response
         return Response(response_body, status=status_code, content_type="application/json")

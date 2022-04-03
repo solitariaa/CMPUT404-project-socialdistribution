@@ -2,6 +2,7 @@ import { post, get, put, del, patch } from "./requests";
 
 
 export function createComment(postData, commentData){
+    console.log(postData.id);
     console.log(postData.id + "comments/")
     return post("authors/" + postData.author.id + "posts/" + postData.id + "/comments/", commentData);
 }

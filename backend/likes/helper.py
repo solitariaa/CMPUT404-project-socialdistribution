@@ -1,5 +1,5 @@
 import json
-from backend.helpers import get_author, get_author_list
+from backend.helpers import get_author, get_author_list, extract_local_id
 from likes.serializers import LikesSerializer
 
 
@@ -9,7 +9,7 @@ def get_likes_helper(like_objects):
     for like in likes:
         found = False
         for author in authors:
-            if "id" in author and (like["author"] in author["id"] or author["id"] in like["author"]):
+            if "id" in author and (author["id"].split("/authors/")[-1].rstrip("/") == like["author"].split("/authors/")[-1].rstrip("/")):
                 found = True
                 like["author"] = author
                 break
