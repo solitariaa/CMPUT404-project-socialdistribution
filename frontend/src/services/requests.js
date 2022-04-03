@@ -31,6 +31,10 @@ export function get(path) {
     return axios.get(path, {headers: {"Authorization": "Token " + localStorage.getItem("token")}});
 }
 
+export function getWithParams(path, params) {
+    return axios.get(path, {headers: {"Authorization": "Token " + localStorage.getItem("token")}, params: params});
+}
+
 export function del(path) {
     return axios.delete(path, {headers: {"Authorization": "Token " + localStorage.getItem("token"), "X-CSRFToken": getCookie('csrftoken')}});
 }

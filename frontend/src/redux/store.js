@@ -6,18 +6,20 @@ import profileReducer from "./profileSlice"
 import inboxReducer from "./inboxSlice"
 import followerReducer from "./followersSlice";
 import followingReducer from "./followingsSlice"
+import userReducer from "./usersSlice"
 
 const reducers = combineReducers({
     profile: profileReducer,
     inbox: inboxReducer, 
     followers: followerReducer, 
     following: followingReducer, 
+    users: userReducer, 
 });
 
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['profile', 'inbox', "followers", "following"]
+    whitelist: ['profile', 'inbox', "followers", "following", "users"]
 };
 
 const persistedReducer = persistReducer(persistConfig, reducers);

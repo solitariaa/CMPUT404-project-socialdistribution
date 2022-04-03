@@ -22,10 +22,8 @@ import { getAllLikes } from '../../Services/likes';
 import { getAuthorFromStorage, setAuthorInStorage  } from '../../LocalStorage/profile';
 import { setInboxInStorage, getInboxFromStorage } from '../../LocalStorage/inbox';
 import { getFollowers } from '../../Services/followers';
-
 import PageviewRoundedIcon from '@mui/icons-material/PageviewRounded';
 import ReceivedURLDialogs from './postSharing/receivedURL';
-
 
 const drawerWidth = 400;
 
@@ -130,14 +128,13 @@ export default function HomePage() {
         .catch( err => console.log(err) );
     }
 
-    /* Get Inbox From Server 
+    /* Get Inbox From Server */
     useEffect( () => {
         getInbox(author.url)
             .then( res => setInbox(res.data.items) )
             .catch( err => console.log(err) )
             .finally( () => console.log(inbox) )
     }, [] );
-    */
 
     /* Get Notifications From Server  */
     useEffect( () => {
@@ -197,7 +194,6 @@ export default function HomePage() {
                     <NavButton onClick={() => setValue("3") }>Management</NavButton>
                     <NavButton onClick={() => setValue("4") }>Notifications</NavButton>
                     <NavButton onClick={() => setValue("5") }>GitHub</NavButton>
-                    <NavButton onClick={() => setValue("6") }>Private</NavButton>
                     <IconButton
                         onClick={onLogout}
                         id="account-icon"
@@ -217,7 +213,7 @@ export default function HomePage() {
             anchor="left" >
             <Toolbar />
             <Divider />
-            <ProfileSection alertSuccess={alertSuccess} alertError={alertError} author={author} editAuthor={editAuthor} addToFeed={addToFeed}/> 
+            <ProfileSection alertSuccess={alertSuccess} alertError={alertError} author={author} editAuthor={editAuthor} /> 
         </Drawer>
         <Box component="main" sx={{ flexGrow: 1, p: 0, marginTop: "15px", width: (windowWidth - drawerWidth) + "px"}}>
             <CreatePost alertSuccess={alertSuccess} alertError={alertError} addToFeed={addToFeed} />
@@ -257,13 +253,6 @@ export default function HomePage() {
                     </TabPanel>
                     <TabPanel value="5" sx={{p:0}}>
                         {githubFeed?.map((event, index) => ( <Grid key={index} item xs={12}> <GithubFeedCard event={event} /> </Grid>))}
-                    </TabPanel>
-                    <TabPanel value="6" sx={{p:0}}>
-                        {inbox.filter(post => post.visibility === author.id).map((post, index) => (
-                            (<Grid item xs={12} key={index}> 
-                                <FeedCard allLikes= {allLikes} post={post} isOwner={post.author.id === author.url} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
-                            </Grid>)
-                        ))}
                     </TabPanel>
                 </TabContext>
             </Box>
