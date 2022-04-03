@@ -108,10 +108,12 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
                 return Response(InboxItemSerializer(inbox_item).data, status=status.HTTP_201_CREATED)
             return Response({"ok": "Successfully Posted To Inbox!"}, status=status.HTTP_200_OK)
         elif request.data["type"].lower() == "follow":
-            summary = f"{request.data['actor']['displayName']} Wants To Follow You!"
-            notification = Notification(type="Follow", author=author, actor=request.data["actor"]["url"], summary=summary)
-            notification.save()
-            return Response({"success": "Follow Request Delivered!"}, status=status.HTTP_200_OK)
+            if "actor" in request.data and "displayName" in request.data["actor"] and "url" in request.data["actor"]:
+                summary = f"{request.data['actor']['displayName']} Wants To Follow You!"
+                notification = Notification(type="Follow", author=author, actor=request.data["actor"]["url"], summary=summary)
+                notification.save()
+                return Response({"success": "Follow Request Delivered!"}, status=status.HTTP_200_OK)
+            return Response({"error": "Invalid Follow Object Received!"}, status=status.HTTP_400_BAD_REQUEST)
         elif request.data["type"].lower() == "like":
             if "author" in request.data and "id" in request.data["author"] and "summary" in request.data:
                 # Save Like
@@ -121,29 +123,35 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
                 Likes.objects.create(**request.data)
 
                 # Create Notification
-                notification = Notification(type="Like", author=author, actor=sender["id"], summary=request.data["summary"])
-                notification.save()
+                # notification = Notification(type="Like", author=author, actor=sender["id"], summary=request.data["summary"])
+                # notification.save()
 
                 # Return Response
                 return Response({"success": "Like Delivered!"}, status=status.HTTP_200_OK)
             return Response({"error": "Invalid Like Object Received!"}, status=status.HTTP_400_BAD_REQUEST)
         elif request.data["type"].lower() == "comment":
-            # Save New Comment
-            if "post" in request.data:
-                post: Post = get_object_or_404(Post, local_id=request.data["post"].split("/posts/")[-1].rstrip("/"))
-                comment = Comment(author_url=request.data["author"]["url"], comment=request.data["comment"], contentType=request.data.get("contentType", Post.ContentType.PLAIN_TEXT), post=post)
-                comment.save()
+            if "post" in request.data and "author" in request.data and "url" in request.data["author"] and "displayName" in request.data["author"]:
+                hosts = [node.host.split("//")[1].rstrip("/").rstrip("/api") for node in Node.objects.all()]
+                if [host in request.data["author"]["url"] for host in hosts].count(True) > 0:
+                    comment_author = helpers.get(request.data["author"]["url"])
+                    if comment_author.status_code == 200:
+                        # Save New Comment
+                        post: Post = get_object_or_404(Post, local_id=request.data["post"].split("/posts/")[-1].rstrip("/"))
+                        comment = Comment(author_url=request.data["author"]["url"], comment=request.data["comment"], contentType=request.data.get("contentType", Post.ContentType.PLAIN_TEXT), post=post)
+                        comment.save()
 
-                # Save Notification
-                summary = f"{request.data['author']['displayName']} Commented On Your Post!"
-                notification = Notification(type="Comment", author=author, actor=request.data["author"]["url"], summary=summary)
-                notification.save()
+                        # Save Notification
+                        summary = f"{request.data['author']['displayName']} Commented On Your Post!"
+                        notification = Notification(type="Comment", author=author, actor=request.data["author"]["url"], summary=summary)
+                        notification.save()
 
-                # Create Response
-                response = CommentSerializer(comment).data
-                response["author"] = request.data["author"]
-                return Response(response, status=status.HTTP_201_CREATED)
-            return Response({"error": "'post' Field Missing!"}, status=status.HTTP_400_BAD_REQUEST)
+                        # Create Response
+                        response = CommentSerializer(comment).data
+                        response["author"] = comment_author.json()
+                        return Response(response, status=status.HTTP_201_CREATED)
+                    return Response({"error": "Comment Author Not Found!"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Comment Author Not From Recognized Host!"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid Comment Object Received!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "Invalid Type: Must Be One Of 'post', 'follow', 'comment', Or 'like'!"}, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):

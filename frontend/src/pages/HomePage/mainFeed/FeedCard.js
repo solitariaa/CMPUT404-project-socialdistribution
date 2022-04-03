@@ -269,7 +269,7 @@ export default function FeedCard({post, alertError, alertSuccess, updateFeed, re
         <CardContent>
           {comments.map((comment, index) => ( 
           <Grid key={index} item xs={12}> 
-            <CommentCard allLikes={allLikes} profile={profile} isOwner={profile.url === comment.author.id && profile.host === post.author.host} removeComment={removeComment} editComments={editComment} likeComment={likeComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
+            <CommentCard post={post} allLikes={allLikes} profile={profile} isOwner={profile.url === comment.author.id && profile.host === post.author.host} removeComment={removeComment} editComments={editComment} likeComment={likeComment} comment={comment} alertSuccess={alertSuccess} alertError={alertError} fullWidth="true" /> 
           </Grid>))}
           <Grid item xs={12} sx={{marginTop: "8px"}}>
             <Card fullwidth="true" sx={{maxHeight: 200, mt:"1%"}}>
