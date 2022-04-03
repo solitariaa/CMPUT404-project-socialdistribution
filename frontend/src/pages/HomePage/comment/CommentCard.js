@@ -32,7 +32,7 @@ function isoToHumanReadableDate(isoDate) {
   return dateFormat.format(date) + " - " + timeFormat.format(date);
 }
 
-export default function CommentCard({comment, alertSuccess, alertError, removeComment, editComments, likeComment}) {
+export default function CommentCard({post, comment, alertSuccess, alertError, removeComment, editComments, likeComment}) {
   const dispatch = useDispatch();
 
   /* Hook For Like icon color */
@@ -67,7 +67,7 @@ export default function CommentCard({comment, alertSuccess, alertError, removeCo
 
   const handleColor = () => {
     if (! likes){ 
-      createCommentLikes(comment, set("id")(profile.url)(profile))
+      createCommentLikes(post, comment, set("id")(profile.url)(profile))
       .then( res => console.log(res.data) )
       .then( _ => {
         const data = { 
