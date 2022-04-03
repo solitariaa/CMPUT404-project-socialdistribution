@@ -74,12 +74,10 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
 
         # Get Posts From Remote Authors
         urls = [helpers.extract_posts_url(author) for author in authors]
-        print(urls)
         with ThreadPoolExecutor(max_workers=1) as executor:
             futures = executor.map(lambda url: helpers.get(url), urls)
         remote_public_posts = []
         for f in futures:
-            print(f.json())
             if f is not None and f.status_code == 200 and "application/json" in f.headers.get("Content-Type", ""):
                 if "posts" in f.json():
                     remote_public_posts += f.json()["posts"]
