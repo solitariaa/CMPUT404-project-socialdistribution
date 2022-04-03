@@ -69,14 +69,8 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer = CommentSerializer(data=request.data)
         serializer.is_valid()
         serializer.save(author_url=author["url"], post=post)
-
-        # Push The Comment To The Recipient's Inbox
         response = dict(**serializer.data)
         response["author"] = author
-        url = f"{response['id'].split('/posts/')[0]}/inbox/"
-        helpers.post(url, json.dumps(response), {"Content-Type": "application/json"})
-
-        # Return Response
         return Response(response, content_type="application/json")
 
     def get_permissions(self):

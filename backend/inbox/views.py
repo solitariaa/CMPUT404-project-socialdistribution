@@ -5,6 +5,8 @@ from rest_framework import mixins, viewsets
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from .models import InboxItem
 from notifications.models import Notification
+from comment.models import Comment
+from comment.serializers import CommentSerializer
 from posts.models import Post
 from posts.serializers import PostSerializer
 from .serializers import InboxItemSerializer
@@ -72,10 +74,12 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
 
         # Get Posts From Remote Authors
         urls = [helpers.extract_posts_url(author) for author in authors]
+        print(urls)
         with ThreadPoolExecutor(max_workers=1) as executor:
             futures = executor.map(lambda url: helpers.get(url), urls)
         remote_public_posts = []
         for f in futures:
+            print(f.json())
             if f is not None and f.status_code == 200 and "application/json" in f.headers.get("Content-Type", ""):
                 if "posts" in f.json():
                     remote_public_posts += f.json()["posts"]
@@ -111,19 +115,37 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
             notification.save()
             return Response({"success": "Follow Request Delivered!"}, status=status.HTTP_200_OK)
         elif request.data["type"].lower() == "like":
-            notification = Notification(type="Like", author=author, actor=request.data["author"]["url"], summary=request.data["summary"])
-            notification.save()
-            request.data.pop("@context", "")
-            like_author = request.data.pop("author")
-            like = Likes.objects.create(**request.data)
-            like.author_url = like_author["id"]
-            like.save()
-            return Response({"success": "Like Delivered!"}, status=status.HTTP_200_OK)
+            if "author" in request.data and "id" in request.data["author"] and "summary" in request.data:
+                # Save Like
+                request.data.pop("@context", "")
+                sender = request.data.pop("author")
+                request.data["author_url"] = sender["id"]
+                Likes.objects.create(**request.data)
+
+                # Create Notification
+                notification = Notification(type="Like", author=author, actor=sender["id"], summary=request.data["summary"])
+                notification.save()
+
+                # Return Response
+                return Response({"success": "Like Delivered!"}, status=status.HTTP_200_OK)
+            return Response({"error": "Invalid Like Object Received!"}, status=status.HTTP_400_BAD_REQUEST)
         elif request.data["type"].lower() == "comment":
-            summary = f"{request.data['author']['displayName']} Commented On Your Post!"
-            notification = Notification(type="Comment", author=author, actor=request.data["author"]["url"], summary=summary)
-            notification.save()
-            return Response({"success": "Comment Delivered!"}, status=status.HTTP_200_OK)
+            # Save New Comment
+            if "post" in request.data:
+                post: Post = get_object_or_404(Post, id=request.data["post"])
+                comment = Comment(author_url=request.data["author"]["url"], comment=request.data["comment"], contentType=request.data["contentType"], post=post)
+                comment.save()
+
+                # Save Notification
+                summary = f"{request.data['author']['displayName']} Commented On Your Post!"
+                notification = Notification(type="Comment", author=author, actor=request.data["author"]["url"], summary=summary)
+                notification.save()
+
+                # Create Response
+                response = CommentSerializer(comment).data
+                response["author"] = helpers.get(comment.author_url).json()
+                return Response(response, status=status.HTTP_201_CREATED)
+            return Response({"error": "'post' Field Missing!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "Invalid Type: Must Be One Of 'post', 'follow', 'comment', Or 'like'!"}, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):

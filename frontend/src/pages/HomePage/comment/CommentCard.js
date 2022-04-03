@@ -5,10 +5,8 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/Button';
 import { styled } from '@mui/material/styles';
 import EditCommentDialog from './EditCommentDialog';
-import EditIcon from '@mui/icons-material/Edit';
 import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
 import DeleteCommentDialog from "./DeleteCommentDialog"
 import Stack from '@mui/material/Stack';
@@ -16,9 +14,11 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Box } from '@mui/system';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { createCommentLikes, getCommentLikes, deleteCommentLikes } from '../../../Services/likes';
+import { createCommentLikes, saveLiked } from '../../../Services/likes';
 import { set } from 'lodash/fp';
 import rehypeRaw from 'rehype-raw'
+import { useSelector, useDispatch } from 'react-redux';
+import { addLiked } from '../../../redux/likedSlice';
 
 const PostImage = styled('img')({width: "100%"})
 
@@ -32,7 +32,9 @@ function isoToHumanReadableDate(isoDate) {
   return dateFormat.format(date) + " - " + timeFormat.format(date);
 }
 
-export default function CommentCard({allLikes, profile, isOwner, comment, alertSuccess, alertError, removeComment, editComments}) {
+export default function CommentCard({comment, alertSuccess, alertError, removeComment, editComments, likeComment}) {
+  const dispatch = useDispatch();
+
   /* Hook For Like icon color */
   const [color, setColor] = React.useState("grey");
 
@@ -48,33 +50,37 @@ export default function CommentCard({allLikes, profile, isOwner, comment, alertS
 
   /* State Hook For Menu (edit/remove) */
   const [anchorEl, setAnchorEl] = React.useState(false);
-  const closeAnchorEl = () => setAnchorEl(false);
-  const openAnchorEl = () => setAnchorEl(true);
+  const closeAnchorEl = () => setAnchorEl(undefined);
+
+  /* State Hook For Likes */
+  const allLikes = useSelector( state => state.liked.items );
+
+  /* State Hook For Current User */
+  const profile = useSelector( state => state.profile );
+
+  /* Boolean Indicating Whether Or Not The Post Is Owned By The Current User */
+  const isOwner = comment.author.id === profile.url
 
   // /* State Hook For likes */
-  const [likes, setLikes] = React.useState(false);
+  const [likes, setLikes] = React.useState(allLikes.includes(comment.id));
+
 
   const handleColor = () => {
-    const data = {
-      type: "Like", 
-      summary: profile.displayName + " likes your comment",
-      context: "https://www.w3.org/ns/activitystreams",
-      object: comment.id, 
-      author_url: profile.id
-    }
-    if (color !== "grey"){
-      deleteCommentLikes(comment, comment.id)
-      .then( res => { 
-        alertSuccess("Success: Deleted Like!");
-        setColor("grey")
-        setLikes(!likes)
-      })
-      .catch( err => {console.log(err)
-        alertError("Error: Could Not Delete Like!");
-      } );
-    }else{
+    if (! likes){ 
       createCommentLikes(comment, set("id")(profile.url)(profile))
-      .then( res => { 
+      .then( res => console.log(res.data) )
+      .then( _ => {
+        const data = { 
+          "summary": `${profile.displayName} Likes Your Comment!`,         
+          "type": "Like",
+          "author": set("id")(profile.url)(profile),    
+          "object": comment.id
+        };
+        return saveLiked(profile, data);
+      } )
+      .then( _ => dispatch(addLiked(comment)) )
+      .then( _ => likeComment(comment.id) )
+      .then( _ => { 
         alertSuccess("Success: Created New Like!");
         setColor("secondary")
         setLikes(!likes)
@@ -98,7 +104,7 @@ export default function CommentCard({allLikes, profile, isOwner, comment, alertS
   }, [comment.id, allLikes] );
 
   return (
-    <Card sx={{maxHeight: 200, mt:"1%"}}>
+    <Card sx={{minHeight: 100, mt:"1%"}}>
       <Grid container direction={'row'} spacing={12}>
         <Grid item xl={10} md={10}>
         <CardContent>
@@ -109,13 +115,17 @@ export default function CommentCard({allLikes, profile, isOwner, comment, alertS
             <Typography variant="caption" color="text.secondary" sx={{pt: 1}}>
               {isoToHumanReadableDate(comment.published)}
             </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{pt: 1}}>({comment.likeCount} likes)</Typography>
           </Stack>
-          {(comment.contentType === "text/plain")&&<Box sx={{width: "100%", px: 0}}>
-            {comment.comment.split("\n").map((p, index) => <Typography key={index} paragraph> {p} </Typography>)}
-          </Box>}
-          {(comment.contentType === "text/markdown")&&<Box sx={{width: "100%", px: 0}}>
-            <ReactMarkdown rehypePlugins={[rehypeRaw]} components={{img: PostImage}}>{comment.comment}</ReactMarkdown>
-          </Box>}
+          <Box>
+            {(comment.contentType === "text/plain")&&<Box sx={{width: "100%", px: 0}}>
+              {comment.comment.split("\n").map((p, index) => <Typography key={index} paragraph> {p} </Typography>)}
+            </Box>}
+            {(comment.contentType === "text/markdown")&&<Box sx={{width: "100%", px: 0}}>
+              <ReactMarkdown rehypePlugins={[rehypeRaw]} components={{img: PostImage}}>{comment.comment}</ReactMarkdown>
+            </Box>}
+
+          </Box>
         </CardContent>
         </Grid>
         <Grid item xl={1} md={1}>
