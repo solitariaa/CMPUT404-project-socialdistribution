@@ -36,7 +36,9 @@ class AuthorViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
 
     def get_queryset(self):
-        return Author.objects.all().order_by("displayName")
+        nodes = Node.objects.all()
+        node_users = [node.username for node in nodes]
+        return Author.objects.all().exclude(displayName__in=node_users).order_by("displayName")
 
     def list(self, request, *args, **kwargs):
         authors = [AuthorSerializer(author).data for author in self.get_queryset()]
