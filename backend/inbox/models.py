@@ -12,6 +12,7 @@ class InboxItem(models.Model):
     owner = models.ForeignKey(Author, on_delete=models.CASCADE)
     src = models.URLField(max_length=350)
     published = models.DateTimeField(default=now, editable=False)
+    tag = models.CharField(default="", max_length=100)
 
     def get_post(self):
         with requests.get(self.src) as res:

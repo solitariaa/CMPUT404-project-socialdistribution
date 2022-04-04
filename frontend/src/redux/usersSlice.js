@@ -7,7 +7,7 @@ export const usersSlice = createSlice({
   },
   reducers: {
     setUsers: (state, action) => {
-      state.items = action.payload.map(x => { return {id: x.id, displayName: x.displayName, profileImage: x.profileImage} });
+      state.items = action.payload.map(x => { return {id: x.id, displayName: x.displayName, profileImage: x.profileImage, url: x.url} });
     },
   },
 })

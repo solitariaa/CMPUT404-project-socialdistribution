@@ -287,7 +287,7 @@ export default function FeedCard({post, alertError, alertSuccess, updateFeed, re
       <EditPostDialog post={post} open={editOpen} onClose={closeEditDialog} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} />
       <EditIMGDialog post={post} open={editIMGOpen} onClose={closeEditIMGDialog} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} />
       <AddCommentsDialog open={addCMOpen} handleAddCMClose={handleAddCMClose} post={post} setComments={setComments} alertSuccess={alertSuccess} alertError={alertError}></AddCommentsDialog>
-      <FollowRequestDialog  authorToFollow={post.author} alertSuccess={alertSuccess} alertError={alertError} open={followOpen} handleClose={closeFollowDialog} />
+      <FollowRequestDialog  authorToFollow={post.author} onClose={closeFollowDialog} alertSuccess={alertSuccess} alertError={alertError} open={followOpen} handleClose={closeFollowDialog} />
       <SharingDialog open ={openSharingDialog} onClose={handleSharingDialogClose} post={post} alertSuccess={alertSuccess} alertError={alertError}></SharingDialog>
       <SharingUnlistedDialog open ={openSharUnlistedDialog} onClose={handleSharingUnlistedDialogClose} post={post} alertSuccess={alertSuccess} alertError={alertError}></SharingUnlistedDialog>
     </Card>

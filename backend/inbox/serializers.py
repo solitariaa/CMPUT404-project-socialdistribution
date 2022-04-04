@@ -5,4 +5,4 @@ from .models import InboxItem
 class InboxItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InboxItem
-        fields = ["id", "owner", "src"]
+        fields = ["id", "owner", "src", "tag"]
