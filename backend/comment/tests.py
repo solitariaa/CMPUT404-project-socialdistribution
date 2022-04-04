@@ -49,8 +49,8 @@ class CommentsTests(APITestCase):
 
     def test_get_comment(self):
         """ Ensure we can create a new account object. """
-        publicUrl = f"api/authors/{self.user.author.local_id}/posts/{self.public_post.local_id}/comments/"
+        publicUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.public_post.local_id}/comments/"
         self.client.force_authenticate(user=self.user)
         publicResponse = self.client.get(publicUrl)
-        # self.assertEqual(publicResponse.status_code, status.HTTP_200_OK)
+        self.assertEqual(publicResponse.status_code, status.HTTP_200_OK)
 
