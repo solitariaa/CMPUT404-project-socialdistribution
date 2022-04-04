@@ -44,7 +44,6 @@ def get(url, headers=None, params=None):
 def post(url, data, headers=None):
     url, auth, headers = prepare_request(url, headers)
     res = r.post(url, data=data, headers=headers, auth=auth)
-    print(url, res.status_code, data)
     return res
 
 
@@ -197,4 +196,6 @@ def validate_proxy(res):
     elif "type" in res and "comments" == res["type"].lower() and "items" in res:
         res["comments"] = [validate_comment(comment) for comment in res["items"]]
         return res
+    elif "type" in res and "post" == res["type"].lower():
+        return validate_post(res)
     return res

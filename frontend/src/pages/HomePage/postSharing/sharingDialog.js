@@ -37,11 +37,9 @@ export default function SharingDialog({open, onClose, post, alertSuccess, alertE
       <Dialog open={open} onClose={onClose} fullWidth>
         <DialogTitle>Sharing the post</DialogTitle>
         <DialogContent>
-          {showingItem?
+          {showingItem ?
           <Box>
-                <DialogContentText>
-                    Please choose your recipient below
-                </DialogContentText>
+                <DialogContentText> Please choose your recipient below </DialogContentText>
               {followers.slice(0, followers.length).map((followers, index) => (
               <Paper key={index} sx={{mt:2}}>
                 <RecipientListItem followers={followers} post={post} alertSuccess={alertSuccess} alertError={alertError}></RecipientListItem>

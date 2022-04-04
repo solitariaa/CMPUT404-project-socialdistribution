@@ -23,6 +23,8 @@ import { setFollowers } from '../../redux/followersSlice';
 import { setFollowing } from '../../redux/followingsSlice'
 import { setUsers } from "../../redux/usersSlice"
 import { setLiked } from "../../redux/likedSlice"
+import { CircularProgress } from '@mui/material';
+import { Backdrop } from '@mui/material';
 
 function Copyright(props) {
   return (
@@ -44,6 +46,11 @@ export default function LoginPage() {
 
   const dispatch = useDispatch();
 
+  /* Hook For Backdrop */
+  const [showBackdrop, setShowBackdrop] = React.useState(false);
+  const openBackdrop = () => setShowBackdrop(true);
+  const closeBackdrop = () => setShowBackdrop(false);
+
   /* Callback For Logging In The User */
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -51,6 +58,7 @@ export default function LoginPage() {
 
     /* Authenticate */
     if (data.get("password") && data.get("displayName")) {
+      openBackdrop();
       axios.post("/api/authors/login/", data)
         .then((res) => {
 
@@ -72,10 +80,14 @@ export default function LoginPage() {
               dispatch(setFollowing(values[2].data.items));
               dispatch(setUsers(values[3].data.items));
               dispatch(setLiked(values[4].data.items));
+              closeBackdrop();
               goToHome();
           })
         })
-        .catch( err => showError(err.response.data.error ? err.response.data.error : "Error Logging In!") );
+        .catch( err => {
+          closeBackdrop();
+          showError(err.response.data.error ? err.response.data.error : "Error Logging In!"); 
+        });
     } else {
       showError("Username And Password Required!")
     }
@@ -126,6 +138,9 @@ export default function LoginPage() {
           </Grid>
         </Box>
       </Box>
+      <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={showBackdrop} onClose={closeBackdrop} >
+        <CircularProgress size={120} color="inherit" />
+      </Backdrop>
       <span style={{position: "absolute", bottom: "35px"}}>
         <Copyright sx={{marginTop: "100px"}} />
       </span>

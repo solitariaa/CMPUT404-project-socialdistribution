@@ -49,14 +49,19 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         owner = get_object_or_404(Author, local_id=self.kwargs["author"])
 
         # Get All Local Inbox Items
-        local_items = [item.src for item in owner.inboxitem_set.filter(src__contains=settings.DOMAIN.rstrip("/"))]
-        local_friend_posts = [PostSerializer(post).data for post in Post.objects.filter(id__in=local_items).exclude(visibility="PUBLIC")]
+        local_items = [item for item in owner.inboxitem_set.filter(src__contains=settings.DOMAIN.rstrip("/"))]
+        local_friend_posts = [PostSerializer(post).data for post in Post.objects.filter(id__in=[x.src for x in local_items]).exclude(visibility="PUBLIC")]
+        for item, post in zip(local_items, local_friend_posts):
+            post["description"] = item.tag if item.tag != "" else post["description"]
 
         # Get All Remote Inbox Items
-        remote_friend_items = [item.src for item in owner.inboxitem_set.exclude(src__contains=settings.DOMAIN.rstrip("/"))]
+        remote_friend_items = [item for item in owner.inboxitem_set.exclude(src__contains=settings.DOMAIN.rstrip("/"))]
         with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.map(lambda x: helpers.get(x), remote_friend_items)
-        remote_friend_posts = [p for p in future if "unlisted" in p and not p["unlisted"]]
+            future = executor.map(lambda x: helpers.get(x), [x.src for x in remote_friend_items])
+        remote_friend_posts = [p.json() for p in future if p.status_code == 200]
+        for item, post in zip(remote_friend_items, remote_friend_posts):
+            post["description"] = item.tag if item.tag != "" else post["description"]
+            post["visibility"] = "FRIENDS"
 
         # Get All Local Public Posts
         local_public_posts = [PostSerializer(post).data for post in Post.objects.filter(id__contains=settings.DOMAIN.rstrip("/"), visibility="PUBLIC")]
@@ -103,7 +108,7 @@ class InboxItemList(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.C
         author = get_object_or_404(Author, local_id=kwargs["author"])
         if request.data["type"].lower() == "post":
             if request.data["visibility"].lower() != "public":
-                inbox_item = InboxItem(owner=author, src=request.data["id"])
+                inbox_item = InboxItem(owner=author, src=request.data["id"], tag=request.data.get("description", ""))
                 inbox_item.save()
                 return Response(InboxItemSerializer(inbox_item).data, status=status.HTTP_201_CREATED)
             return Response({"ok": "Successfully Posted To Inbox!"}, status=status.HTTP_200_OK)
