@@ -54,7 +54,7 @@ class PostsTests(APITestCase):
         self.client.force_authenticate(user=self.user)
         publicResponse = self.client.get(publicUrl)
         friendResponse = self.client.get(friendUrl)
-        # self.assertEqual(friendResponse.status_code, status.HTTP_200_OK)
+        self.assertEqual(friendResponse.status_code, status.HTTP_200_OK)
         self.assertEqual(publicResponse.status_code, status.HTTP_200_OK)
 
     def test_put_post(self):
@@ -68,11 +68,11 @@ class PostsTests(APITestCase):
         friendResponse.data["title"]= "Testing post title"
         publicNewResponse = self.client.put(publicUrl, data=publicResponse.data, format='json')
         friendNewResponse = self.client.put(friendUrl, data=friendResponse.data, format='json')
-        # self.assertEqual(friendNewResponse.status_code, status.HTTP_200_OK)
+        self.assertEqual(friendNewResponse.status_code, status.HTTP_200_OK)
         self.assertEqual(publicNewResponse.status_code, status.HTTP_200_OK)
         publicResponse = self.client.get(publicUrl)
         friendResponse = self.client.get(friendUrl)
-        # self.assertEqual(friendResponse.data["title"], "Testing post title")
+        self.assertEqual(friendResponse.data["title"], "Testing post title")
         self.assertEqual(publicResponse.data["title"], "Testing post title")
 
 
@@ -83,5 +83,5 @@ class PostsTests(APITestCase):
         self.client.force_authenticate(user=self.user)
         publicResponse = self.client.delete(publicUrl)
         friendResponse = self.client.delete(friendUrl)
-        # self.assertEqual(friendResponse.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(friendResponse.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(publicResponse.status_code, status.HTTP_204_NO_CONTENT)

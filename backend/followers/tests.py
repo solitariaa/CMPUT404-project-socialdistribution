@@ -39,7 +39,7 @@ def create_Following (actor, author):
             }
     return Following.objects.create(**data)
 
-class LikesTests(APITestCase):
+class FollowersTests(APITestCase):
 
     def setUp(self) -> None:
         self.user = create_user("SuperUser")
@@ -47,14 +47,14 @@ class LikesTests(APITestCase):
         self.follower = create_Follower( self.testuser.author, self.user.author)
         self.following = create_Following( self.testuser.author, self.user.author)
     
-    def test_get_followers (self):
-        publicUrl = f"/api/authors/{self.user.author.local_id}/followers/"
-        # self.client.force_authenticate(user=self.user)
-        publicResponse = self.client.get(publicUrl)
-        print (publicResponse)
+    # def test_get_followers (self):
+    #     publicUrl = f"/api/authors/{self.user.author.local_id}/followers/"
+    #     self.client.force_authenticate(user=self.user)
+    #     publicResponse = self.client.get(publicUrl)
+    #     print (publicResponse)
 
-    def test_get_following (self):
-        publicUrl = f"/api/authors/{self.user.author.local_id}/following/"
-        # self.client.force_authenticate(user=self.user)
-        publicResponse = self.client.get(publicUrl)
-        print (publicResponse)
+    # def test_get_following (self):
+    #     publicUrl = f"/api/authors/{self.user.author.local_id}/following/"
+    #     self.client.force_authenticate(user=self.user)
+    #     publicResponse = self.client.get(publicUrl)
+        # print (publicResponse)
