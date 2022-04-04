@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { useState } from 'react';
 import { pushToInbox } from '../../../redux/inboxSlice';
 import PrivatePostDialog from '../createPost/PrivatePostDialog';
+import FollowRequestDialog from '../../../Components/FollowRequestDialog';
 
 export default function ProfileListItem({type, author, profile, removeProfile, alertError, alertSuccess}) {
 
@@ -18,13 +19,16 @@ export default function ProfileListItem({type, author, profile, removeProfile, a
     const handleClickOpen = () => setOpenPostDialog(true); 
     const handleClickClose = () =>  setOpenPostDialog(false);
 
+    const [openFollowDialog, setOpenFollowDialog] = React.useState(false);
+    const clickOpenFollowDialog = () => { setOpenFollowDialog(true); console.log("HASDOINOINOIN") }
+    const closeFollowDialog = () =>  setOpenFollowDialog(false);
+    
     /* Add A New Item To The Inbox */
     const addToFeed = item => dispatch(pushToInbox(item));
 
-
     return (
         <div>
-            <ListItemButton sx={{ pl: 3 }} onClick={type === "friends" ? handleClickOpen : handleOpen}>
+            <ListItemButton sx={{ pl: 3 }} onClick={type === "friends" ? handleClickOpen : (type === "authors" ? clickOpenFollowDialog : handleOpen)}>
                 <ListItemAvatar>
                     <Avatar alt={profile.displayName} src={profile.profileImage} />
                 </ListItemAvatar>
@@ -32,6 +36,7 @@ export default function ProfileListItem({type, author, profile, removeProfile, a
             </ListItemButton>
             {type === "following" && <DeleteFollowingDialog author={author} following={profile} alertSuccess={alertSuccess} alertError={alertError} open={open} handleClose={handleClose} removeFollowing={removeProfile} />}
             {type === "friends" && <PrivatePostDialog recipient={profile} open={openPostDialog} profile={author} onClose={handleClickClose} alertError={alertError} alertSuccess={alertSuccess} addToFeed={addToFeed} />}
+            {type === "authors" && <FollowRequestDialog  authorToFollow={profile} alertSuccess={alertSuccess} alertError={alertError} open={openFollowDialog} handleClose={closeFollowDialog} />}
         </div>
     );
 }

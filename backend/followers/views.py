@@ -61,9 +61,9 @@ def followers_list(request, author):
 def followers_detail(request, author, follower):
     author_object = get_object_or_404(Author, local_id=author)
     if request.method == 'GET':
-        author_followers = [f.actor for f in author_object.follower_set.all() if f.actor == follower]
+        author_followers = [f.actor for f in author_object.follower_set.all() if follower.rstrip('/') in f.actor.rstrip('/')]
         if len(author_followers) > 0:
-            return Response({"ok": f"{author_object.displayName} Follows {author_followers[0]}!"}, status=status.HTTP_200_OK, content_type="application/json")
+            return Response({"ok": f"{author_followers[0]} Follows {author_object.displayName}!"}, status=status.HTTP_200_OK, content_type="application/json")
         return Response(status=status.HTTP_404_NOT_FOUND)
     elif request.method == 'PUT':
         follower_json = get_author(follower)
@@ -112,9 +112,12 @@ def following_list(request, author):
 
     # For Each Author We Are Following Check With Their Server If We Are Indeed A Follower
     with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.map(lambda x: get(x), [f"{f['id'].rstrip('/')}/followers/{author_object.id.rstrip('/')}//" for f in following])
+        future = executor.map(lambda x: get(x), [f"{f['id'].rstrip('/')}/followers/{author_object.local_id}/" for f in following])
 
     # Filter For Confirmed Followers
-    confirmed_following = [f[0] for f in zip(following, list(future)) if f[1] is not None and f[1].status_code != 404]
+    future = list(future)
+    confirmed_following = [f[0] for f in zip(following, future) if f[1] is not None and f[1].status_code != 404]
+    for fol, f in zip(following, future):
+        print(fol["displayName"], f.status_code)
     confirmed_following.sort(key=lambda x: x["displayName"])
     return Response({"type": "following", "items": confirmed_following}, content_type="application/json")

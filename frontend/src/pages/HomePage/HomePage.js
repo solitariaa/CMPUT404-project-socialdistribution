@@ -192,14 +192,14 @@ export default function HomePage() {
             <Box sx={{ width: '100%', typography: 'body1' }}>
                 <TabContext value={value}>
                     <TabPanel value="1" sx={{p:0}}>
-                        {inbox.filter(post => post.visibility === "PUBLIC").map((post, index) => (
+                        {inbox.filter(post => post.visibility === "PUBLIC" && !post.unlisted).map((post, index) => (
                             (<Grid item xs={12} key={index}> 
                                 <FeedCard post={post} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
                             </Grid>)
                         ))}
                     </TabPanel>
                     <TabPanel value="2" sx={{p:0}}>
-                        {inbox.filter(post => post.visibility !== "PUBLIC").map((post, index) => (
+                        {inbox.filter(post => post.visibility !== "PUBLIC" && !post.unlisted).map((post, index) => (
                             (<Grid item xs={12} key={index}> 
                                 <FeedCard post={post} fullWidth={true} alertError={alertError} alertSuccess={alertSuccess} updateFeed={updateFeed} removeFromFeed={removeFromFeed} /> 
                             </Grid>)

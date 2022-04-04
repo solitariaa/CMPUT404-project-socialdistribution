@@ -32,7 +32,7 @@ def on_create_post(sender, **kwargs):
         post.origin = url if not post.origin else post.origin
 
         # Push Posts To Recipient's Inbox
-        if post.contentType != post.ContentType.PNG and post.contentType != post.ContentType.JPEG:
+        if post.contentType != post.ContentType.PNG and post.contentType != post.ContentType.JPEG and not post.unlisted:
             data = PostSerializer(post).data
             data["author"] = AuthorSerializer(post.author).data
             if post.visibility == "PUBLIC":
@@ -61,9 +61,6 @@ def on_create_post(sender, **kwargs):
                 # Find The Matching Author
                 found = False
                 for author in authors:
-                    #print("Recipient:", post.visibility.rstrip("/"))
-                    #print("Author:", author["id"].rstrip("/"))
-                    #print("Found:",author["id"].rstrip("/") == post.visibility.rstrip("/"))
                     if author["id"].rstrip("/") == post.visibility.rstrip("/"):
                         helpers.post(f"{post.visibility.rstrip('/')}/inbox/", json.dumps(data), headers={"Content-Type": "application/json"})
                         found = True
