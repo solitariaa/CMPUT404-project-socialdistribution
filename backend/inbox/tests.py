@@ -20,7 +20,7 @@ def create_public_post(author):
             "content": "Public Post Content",
             "author": author,
             "categories": ["public", "post", "test"],
-            "visibility": Post.Visibility.PUBLIC,
+            "visibility": "PUBLIC",
             "unlisted": False
             }
     return Post.objects.create(**data)
@@ -33,7 +33,7 @@ def create_friend_post(author):
             "content": "Friend Post Content",
             "author": author,
             "categories": ["friend", "post", "test"],
-            "visibility": Post.Visibility.FRIENDS,
+            "visibility": "FRIENDS",
             "unlisted": False
             }
     return Post.objects.create(**data)

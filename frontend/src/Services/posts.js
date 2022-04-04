@@ -5,6 +5,7 @@ export function getInbox(authorID) {
 }
 
 export function createPost(data, userID){
+    console.log(userID + "posts/");
     return post(userID + "posts/", data);
 }
 
@@ -17,7 +18,8 @@ export function deletePost(postID){
 }
 
 export function getUnlistedPost(url){
-    return get(url);
+    const authorID = url.split("posts/")[0];
+    return get("authors/" + authorID + "/posts/" + url + "/");
 }
 
 export function getPost(data, authorID, postID){

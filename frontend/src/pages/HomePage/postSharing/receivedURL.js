@@ -65,11 +65,16 @@ export default function ReceivedURLDialogs({open, onClose, alertSuccess, alertEr
     //state hook for expand view
     const [expanded, setExpanded] = React.useState(false);
 
+    const clickClose = () => {
+      setExpanded(false);
+      onClose();
+    }
 
     //Handler for get post from URL
     const handleGet = () => {
         getUnlistedPost(id)
         .then( res => { 
+            console.log(res.data);
             setUnlistedPost(res.data)
             setExpanded(true);
             alertSuccess("Success: Retrieved Post!");
@@ -78,25 +83,17 @@ export default function ReceivedURLDialogs({open, onClose, alertSuccess, alertEr
             alertError("Error: Could Not Retrieved Post!");
         });
       };
+
   return (
     <div>
-      <BootstrapDialog
-        onClose={onClose}
-        aria-labelledby="customized-dialog-title"
-        open={open}
-        fullWidth
-      >
-        <BootstrapDialogTitle id="customized-dialog-title" onClose={onClose}>
-          Retrieved Unlisted Post
-        </BootstrapDialogTitle>
+      <BootstrapDialog onClose={clickClose} aria-labelledby="customized-dialog-title" open={open} fullWidth >
+        <BootstrapDialogTitle id="customized-dialog-title" onClose={clickClose}> Retrieved Unlisted Post </BootstrapDialogTitle>
         <DialogContent dividers>
         <TextField id="outlined-basic" label="Input the URL here" variant="outlined" sx={{width:"80%"}} onChange={(e) => {setId(e.target.value)}}/>
-        <Button variant="contained" endIcon={<GetAppIcon />} sx={{height: 56, width:"20%"}} onClick={handleGet}>
-            Get
-        </Button>
+        <Button variant="contained" endIcon={<GetAppIcon />} sx={{height: 56, width:"20%"}} onClick={handleGet}> Get </Button>
         </DialogContent>
         <Collapse in={expanded} timeout="auto" unmountOnExit>
-            <UnlistedFeed post={unlistedPost}></UnlistedFeed>
+            <UnlistedFeed post={unlistedPost} />
         </Collapse>
       </BootstrapDialog>
     </div>

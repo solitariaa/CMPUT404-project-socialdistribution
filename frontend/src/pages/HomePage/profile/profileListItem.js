@@ -7,14 +7,11 @@ import Box from '@mui/material/Box';
 import { setInboxInStorage, getInboxFromStorage } from '../../../LocalStorage/inbox';
 import { getAuthorFromStorage, setAuthorInStorage  } from '../../../LocalStorage/profile';
 import DeleteFollowingDialog from './deleteFollowingDialog';
-import { useSelector } from 'react-redux';
-import Button from '@mui/material/Button';
-import ButtonGroup from '@mui/material/ButtonGroup';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-
+import { useDispatch } from 'react-redux';
+import { useState } from 'react';
+import { pushToInbox } from '../../../redux/inboxSlice';
+import PrivatePostDialog from '../createPost/PrivatePostDialog';
+import FollowRequestDialog from '../../../Components/FollowRequestDialog';
 
 export default function ProfileListItem({type, author, profile, removeProfile, alertError, alertSuccess, addToFeed}) {
     const [open, setOpen] = React.useState(false);
@@ -41,51 +38,34 @@ export default function ProfileListItem({type, author, profile, removeProfile, a
       setAppear(true);
     };
 
+    const dispatch = useDispatch();
+
+    const [open, setOpen] = useState(false);
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
+
+    const [openPostDialog, setOpenPostDialog] = React.useState(false);
+    const handleClickOpen = () => setOpenPostDialog(true); 
+    const handleClickClose = () =>  setOpenPostDialog(false);
+
+    const [openFollowDialog, setOpenFollowDialog] = React.useState(false);
+    const clickOpenFollowDialog = () => { setOpenFollowDialog(true); console.log("HASDOINOINOIN") }
+    const closeFollowDialog = () =>  setOpenFollowDialog(false);
+    
+    /* Add A New Item To The Inbox */
+    const addToFeed = item => dispatch(pushToInbox(item));
 
     return (
-        <Box>
-        <ListItem sx={{ pl: 4 }} >
-            <ListItemAvatar>
-                <Avatar alt={profile.displayName} src={profile.profileImage} />
-            </ListItemAvatar>
-            <ListItemText primary={profile.displayName} />
-            <IconButton
-                aria-label="more"
-                id="long-button"
-                aria-controls={openMenu ? 'long-menu' : undefined}
-                aria-expanded={openMenu ? 'true' : undefined}
-                aria-haspopup="true"
-                onClick={handleMenuClick}
-            >
-                <MoreVertIcon />
-            </IconButton>
-            <Menu
-                id="long-menu"
-                MenuListProps={{
-                'aria-labelledby': 'long-button',
-                }}
-                anchorEl={anchorEl}
-                open={openMenu}
-                onClose={handleMenuClose}
-                PaperProps={{
-                style: {
-                    maxHeight: 100,
-                    width: '20ch',
-                },
-                }}
-            >
-                <MenuItem key={"CRPost"} onClick={handleSendClick}>
-                    Send Post
-                </MenuItem>
-                {type === "following" && <MenuItem key={"IMGPost"} onClick={handleUnfollowOpen}>
-                    Unfollow
-                </MenuItem>}
-            </Menu>
-        </ListItem>
-        <ProfilePrivateMessage open={appear} onClose={appearClose} profile={profile} alertError={alertError} alertSuccess={alertSuccess} addToFeed={addToFeed} />
-        {type === "following" && <DeleteFollowingDialog author={author} following={profile} alertSuccess={alertSuccess} alertError={alertError} open={open} handleClose={handleClose} removeFollowing={removeProfile}/>}
-        </Box>
-        );
-    }
-
-        
+        <div>
+            <ListItemButton sx={{ pl: 3 }} onClick={type === "friends" ? handleClickOpen : (type === "authors" ? clickOpenFollowDialog : handleOpen)}>
+                <ListItemAvatar>
+                    <Avatar alt={profile.displayName} src={profile.profileImage} />
+                </ListItemAvatar>
+                <ListItemText primary={profile.displayName} />
+            </ListItemButton>
+            {type === "following" && <DeleteFollowingDialog author={author} following={profile} alertSuccess={alertSuccess} alertError={alertError} open={open} handleClose={handleClose} removeFollowing={removeProfile} />}
+            {type === "friends" && <PrivatePostDialog recipient={profile} open={openPostDialog} profile={author} onClose={handleClickClose} alertError={alertError} alertSuccess={alertSuccess} addToFeed={addToFeed} />}
+            {type === "authors" && <FollowRequestDialog  authorToFollow={profile} alertSuccess={alertSuccess} alertError={alertError} open={openFollowDialog} handleClose={closeFollowDialog} />}
+        </div>
+    );
+}

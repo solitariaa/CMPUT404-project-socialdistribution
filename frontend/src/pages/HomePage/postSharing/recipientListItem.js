@@ -5,20 +5,19 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
-import {createPost} from "../../../Services/posts"
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { assign } from 'lodash/fp';
+import { pushToInbox } from '../../../Services/inbox';
 
 
 export default function RecipientListItem({followers, post, alertSuccess, alertError}) {
     const [dense, setDense] = React.useState(false);
+
     const author = useSelector(state => state.profile);
-    // handler for sending share request
+
     const handleSending = () => {
-      post.source = author.url
-      post.title = author.displayName + " Share you this post: " + post.title 
-      // console.log("post is: ", post.title)
-      //source dont match origin mean post is not yours
-      createPost(post, followers.id)
+      console.log();
+      pushToInbox( followers.id, assign(post, {description: post.description + " (Shared By " + author.displayName + ")", visibility: "FRIENDS"}) )
         .then( res => { 
           alertSuccess("Success: Sharing post to " + followers.displayName + "!");
         })
