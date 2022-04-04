@@ -29,7 +29,7 @@ def prepare_request(url, headers):
         if "/api/" not in url:
             url = "http://squawker-cmput404.herokuapp.com/api" + url.split("squawker-cmput404.herokuapp.com")[1]
         url = url.rstrip("/")
-    if node is not None and ("c404-social-distribution.herokuapp.com" in url):
+    if node is not None and ("c404-social-distribution.herokuapp.com" in url) and ("follow" not in url):
         url = "http://c404-social-distribution.herokuapp.com/service" + url.split("c404-social-distribution.herokuapp.com")[1]
         url = url.rstrip("/")
     return url, auth, headers
@@ -59,7 +59,9 @@ def patch(url, data, headers=None):
 
 def put(url, data, headers=None):
     url, auth, headers = prepare_request(url, headers)
-    return r.put(url, data=data, headers=headers, auth=auth)
+    res = r.put(url, data=data, headers=headers, auth=auth)
+    print(url, res.status_code)
+    return res
 
 
 def get_author(author, headers=None):
