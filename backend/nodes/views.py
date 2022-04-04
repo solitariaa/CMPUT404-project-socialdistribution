@@ -22,7 +22,7 @@ class NodeViewSet(viewsets.ModelViewSet):
                 host=request.data["host"],
                 username=request.data["username"],
                 password=request.data["password"], 
-                credentials=user
+                remote_credentials=user
             )
             node.save()
             return Response(NodeSerializer(node).data)
