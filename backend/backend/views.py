@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, renderer_classes, permission_classes, authentication_classes
-from .helpers import get, post, patch, put, delete
+from .helpers import get, post, patch, put, delete, validate_proxy
 
 status_codes = {200: status.HTTP_200_OK,
                 201: status.HTTP_201_CREATED,
@@ -22,7 +22,8 @@ status_codes = {200: status.HTTP_200_OK,
                 404: status.HTTP_404_NOT_FOUND,
                 405: status.HTTP_405_METHOD_NOT_ALLOWED,
                 409: status.HTTP_409_CONFLICT,
-                500: status.HTTP_500_INTERNAL_SERVER_ERROR}
+                500: status.HTTP_500_INTERNAL_SERVER_ERROR,
+                503: status.HTTP_503_SERVICE_UNAVAILABLE}
 
 responses = {200: {"success": "OK!"},
              201: {"success": "Successfully Created!"},
@@ -33,7 +34,8 @@ responses = {200: {"success": "OK!"},
              404: {"error": "Not Found!"},
              405: {"error": "Method Not Allowed!"},
              409: {"error": "Conflict!"},
-             500: {"error": "Internal Server Error!"}}
+             500: {"error": "Internal Server Error!"},
+             503: {"error": "Service Unavailable!"}}
 
 
 def get_headers(request):
@@ -110,6 +112,7 @@ def proxy_requests(request, path):
         validate = URLValidator()
         validate(path)
         path = path.replace("http:/", "http://")
+        path = path.replace("https:/", "http://")
         path = path.replace("///", "//")
         if "followers" in path or "following" in path:
             parts = (path + "/").split("/")
@@ -119,9 +122,13 @@ def proxy_requests(request, path):
             if len(parts) - j > 4 and url[-2:] != "//":
                 url += "/"
         else:
-            url = "http://" + (path + "/").split("http://")[-1].replace("//", "/")
+            if "http://" in path:
+                url = "http://" + (path + "/").split("http://")[-1].replace("//", "/")
+            else:
+                url = "http://" + (path + "/").split("https://")[-1].replace("//", "/")
         status_code, content_type, response_body = proxy_selector(request, url)
-        if content_type != "application/json":
+        response_body = validate_proxy(response_body)
+        if "application/json" not in content_type:
             response = HttpResponse(content_type=content_type, status=status_code)
             response.write(response_body)
             return response
@@ -129,7 +136,7 @@ def proxy_requests(request, path):
     except ValidationError:  # If Path Is Not A URL, We Make The Request To Our Own Server
         status_code, content_type, response_body = proxy_selector(request, f"{settings.DOMAIN}/api/authors/{path}/")
         if content_type != "application/json":
-            response = HttpResponse(content_type=content_type)
+            response = HttpResponse(content_type=content_type, status=status_code)
             response.write(response_body)
             return response
         return Response(response_body, status=status_code, content_type="application/json")

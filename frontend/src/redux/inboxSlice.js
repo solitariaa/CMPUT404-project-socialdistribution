@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { concat } from 'lodash/fp'
+import { concat, findIndex, omit } from 'lodash/fp'
 
 export const inboxSlice = createSlice({
   name: 'inbox',
@@ -8,14 +8,21 @@ export const inboxSlice = createSlice({
   },
   reducers: {
     pushToInbox: (state, action) => {
-      state.items = concat(state.items)(action.payload).sort((a, b) => Date.parse(b.published) - Date.parse(a.published));
+      state.items = concat(state.items)(omit(["commentsSrc"])(action.payload)).sort((a, b) => Date.parse(b.published) - Date.parse(a.published));
     },
     setInbox: (state, action) => {
-      state.items = action.payload;
+      state.items = action.payload.map(omit(["commentsSrc"]));
     },
+    removeFromInbox: (state, action) => {
+      state.items = state.items.filter( x => x.id !== action.payload.id);
+    }, 
+    updateInboxItem: (state, action) => {
+      const index = findIndex(x => x.id === action.payload.id)(state.items);
+      state.items = state.items.map((x, i) => i === index ? action.payload : x);
+    }, 
   },
 })
 
-export const { pushToInbox, setInbox } = inboxSlice.actions
+export const { pushToInbox, setInbox, removeFromInbox, updateInboxItem } = inboxSlice.actions
 
 export default inboxSlice.reducer

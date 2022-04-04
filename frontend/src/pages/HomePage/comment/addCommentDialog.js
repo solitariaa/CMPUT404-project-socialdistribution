@@ -12,12 +12,17 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import Paper from '@mui/material/Paper';
-import {createComment} from "../../../Services/comments"
+import {createComment, getComments} from "../../../Services/comments"
 import { getAuthorFromStorage } from '../../../LocalStorage/profile';
+import { useSelector } from 'react-redux';
+import { set } from 'lodash/fp';
 
 
 
-export default function AddCommentsDialog({open, handleAddCMClose, addComment, post, alertSuccess, alertError}) {
+export default function AddCommentsDialog({open, handleAddCMClose, setComments, post, alertSuccess, alertError}) {
+
+  /* Hook For Author */
+  const author = useSelector(state => state.profile);
 
   /* This Function Posts Form Data To The Backend For Creating New Comments */
   const handleSubmit = (event) => {
@@ -26,11 +31,11 @@ export default function AddCommentsDialog({open, handleAddCMClose, addComment, p
     const formData = new FormData(event.currentTarget);
     const data = {
       type: "comment", 
+      post: post.id, 
       comment: String(formData.get("comment")), 
       contentType: String(formData.get("contentType")), 
-      author: getAuthorFromStorage(),
+      author: set("id")(author.url)(author),
     }
-
 
     /* Validate Fields */
     const fieldValidator = new RegExp("^\\S+")
@@ -38,12 +43,11 @@ export default function AddCommentsDialog({open, handleAddCMClose, addComment, p
 
     /* Send Data To backend */
     if (valid) {
-      console.log(data);
       createComment(post, data)
-        .then( res => { 
-          addComment(res.data);
-          alertSuccess("Success: Created New Comment!");
-        })
+        .then( res => console.log(res.data) )
+        .then( _ =>  getComments(post) )
+        .then( res => setComments(res.data.comments ? res.data.comments : []) )
+        .then ( _ => alertSuccess("Success: Created New Comment!") )
         .catch( err => { 
           console.log(err);
           alertError("Error: Could Not Create Comment!");
