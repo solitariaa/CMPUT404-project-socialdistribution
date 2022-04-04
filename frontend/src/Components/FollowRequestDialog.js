@@ -23,6 +23,7 @@ export default function FollowRequestDialog({authorToFollow, alertSuccess, alert
     };
     console.log(JSON.stringify(data));
     pushToInbox(authorToFollow.id, data)
+        .then( res => console.log( res ) )
         .then( _ => addFollowing(author.url, authorToFollow.id) )
         .then( _ => alertSuccess("Follow Request Sent!") )
         .catch( err => { console.log(err); alertError("Error: Could Not Send Follow Request!"); } )
