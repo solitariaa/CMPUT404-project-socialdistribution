@@ -43,7 +43,9 @@ def get(url, headers=None, params=None):
 
 def post(url, data, headers=None):
     url, auth, headers = prepare_request(url, headers)
-    return r.post(url, data=data, headers=headers, auth=auth)
+    res = r.post(url, data=data, headers=headers, auth=auth)
+    print(url, res.status_code, data)
+    return res
 
 
 def delete(url, headers=None):
