@@ -58,7 +58,6 @@ export default function CRPostDialog({alertSuccess, alertError, open, onClose, a
       visibility: formData.get("visibility"), 
       unlisted: formData.get("unlisted")
     }
-    // console.log("unlisted data here!!!!", formData.get("unlisted"))
 
     /* Validate Fields */
     const listValidator = new RegExp("^\\w+[,]?")
