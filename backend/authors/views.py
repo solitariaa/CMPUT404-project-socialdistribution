@@ -42,7 +42,8 @@ class AuthorViewSet(viewsets.ModelViewSet):
         return Author.objects.all().exclude(displayName__in=node_users).order_by("displayName")
 
     def list(self, request, *args, **kwargs):
-        authors = get_all_authors()
+        all_authors = request.query_params.get("remote", "false")
+        authors = get_all_authors(all_authors == "true")
         page = self.paginator.paginate_queryset(authors, request)
         return self.paginator.get_paginated_response(page)
 
