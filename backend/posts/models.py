@@ -13,10 +13,6 @@ class Post(models.Model):
         PNG = "image/png;base64"
         JPEG = "image/jpeg;base64"
 
-    class Visibility(models.TextChoices):
-        PUBLIC = "PUBLIC"
-        FRIENDS = "FRIENDS"
-
     local_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     type = models.CharField(max_length=100, default="post")
     title = models.CharField(max_length=200)
@@ -29,5 +25,5 @@ class Post(models.Model):
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     categories = ArrayField(models.CharField(max_length=100))
     published = models.DateTimeField(default=now, editable=False)
-    visibility = models.CharField(max_length=100, choices=Visibility.choices)
+    visibility = models.CharField(max_length=100)
     unlisted = models.BooleanField(default=False)

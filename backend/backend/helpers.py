@@ -29,6 +29,9 @@ def prepare_request(url, headers):
         if "/api/" not in url:
             url = "http://squawker-cmput404.herokuapp.com/api" + url.split("squawker-cmput404.herokuapp.com")[1]
         url = url.rstrip("/")
+    if node is not None and ("c404-social-distribution.herokuapp.com" in url):
+        url = "http://c404-social-distribution.herokuapp.com/service" + url.split("c404-social-distribution.herokuapp.com")[1]
+        url = url.rstrip("/")
     return url, auth, headers
 
 
@@ -83,7 +86,8 @@ def get_author_list(authors, headers=None):
 
 
 def get_authors(host: str, headers=None):
-    response = get(f"{host.rstrip('/')}/authors", headers)
+    response = get(f"{host.rstrip('/')}/authors/", headers)
+    # print(host, response.status_code)
     return response.json() if response is not None and response.status_code == 200 else {"error": "Cannot Connect To Host!"}
 
 
@@ -156,7 +160,7 @@ def extract_likes(object_with_likes):
 
 def validate_author(author):
     author["id"] = extract_remote_id(author["id"])
-    author["url"] = author["url"]
+    author["url"] = author["id"]
     author["profileImage"] = extract_profile_image(author)
     return author
 
@@ -185,7 +189,10 @@ def validate_proxy(res):
         res = json.loads(res.decode('utf-8'))
     if "type" in res and "comment" == res["type"].lower():
         return validate_comment(res)
-    elif "type" in res and "comments" == res["type"].lower():
+    elif "type" in res and "comments" == res["type"].lower() and "comments" in res:
         res["comments"] = [validate_comment(comment) for comment in res["comments"]]
+        return res
+    elif "type" in res and "comments" == res["type"].lower() and "items" in res:
+        res["comments"] = [validate_comment(comment) for comment in res["items"]]
         return res
     return res

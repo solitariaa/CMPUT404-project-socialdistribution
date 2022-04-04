@@ -21,6 +21,7 @@ from django.contrib import auth
 from rest_framework.authtoken.models import Token
 from likes.models import Liked
 from likes.serializers import LikedSerializer
+from .helpers import get_all_authors
 
 
 class CustomPageNumberPagination(PageNumberPagination):
@@ -41,14 +42,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
         return Author.objects.all().exclude(displayName__in=node_users).order_by("displayName")
 
     def list(self, request, *args, **kwargs):
-        authors = [AuthorSerializer(author).data for author in self.get_queryset()]
-        if request.query_params.get("remote", "false") == "true":
-            nodes = Node.objects.all()
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                futures = executor.map(lambda node: helpers.get_authors(node), [node.host for node in nodes if node.host.rstrip("/") not in settings.DOMAIN.rstrip("/")])
-            remote_authors = reduce(lambda acc, x: acc + (x["items"] if "items" in x else []), futures, [])
-            authors += [helpers.validate_author(author) for author in remote_authors]
-            authors.sort(key=lambda x: x["displayName"])
+        authors = get_all_authors()
         page = self.paginator.paginate_queryset(authors, request)
         return self.paginator.get_paginated_response(page)
 
