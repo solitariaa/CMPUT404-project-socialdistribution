@@ -49,6 +49,7 @@ class NotificationTests(APITestCase):
         self.assertEqual(publicResponse.status_code, status.HTTP_200_OK)
 
     def test_delete_notifications(self):
-        deleteUrl = f"/api/authors/{self.followed_user.author.local_id}/notifications/{self.post_notification.id}/"
+        deleteUrl = f"/api/authors/{self.user.author.local_id}/notifications/{self.post_notification.id}/"
         self.client.force_authenticate(user=self.user)
         publicResponse = self.client.delete(deleteUrl)
+        self.assertEqual(publicResponse.status_code, status.HTTP_204_NO_CONTENT)
