@@ -21,7 +21,6 @@ export default function ProfileListItem({type, author, profile, removeProfile, a
     /* Add A New Item To The Inbox */
     const addToFeed = item => dispatch(pushToInbox(item));
 
-
     return (
         <div>
             <ListItemButton sx={{ pl: 3 }} onClick={type === "friends" ? handleClickOpen : handleOpen}>

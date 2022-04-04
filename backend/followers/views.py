@@ -61,9 +61,9 @@ def followers_list(request, author):
 def followers_detail(request, author, follower):
     author_object = get_object_or_404(Author, local_id=author)
     if request.method == 'GET':
-        author_followers = [f.actor for f in author_object.follower_set.all() if f.actor == follower]
+        author_followers = [f.actor for f in author_object.follower_set.all() if f.actor.rstrip('/') == follower.rstrip('/')]
         if len(author_followers) > 0:
-            return Response({"ok": f"{author_object.displayName} Follows {author_followers[0]}!"}, status=status.HTTP_200_OK, content_type="application/json")
+            return Response({"ok": f"{author_followers[0]} Follows {author_object.displayName}!"}, status=status.HTTP_200_OK, content_type="application/json")
         return Response(status=status.HTTP_404_NOT_FOUND)
     elif request.method == 'PUT':
         follower_json = get_author(follower)
