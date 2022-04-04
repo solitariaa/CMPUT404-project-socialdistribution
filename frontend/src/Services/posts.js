@@ -5,6 +5,7 @@ export function getInbox(authorID) {
 }
 
 export function createPost(data, userID){
+    console.log(userID + "posts/");
     return post(userID + "posts/", data);
 }
 

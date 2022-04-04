@@ -112,6 +112,7 @@ def proxy_requests(request, path):
         validate = URLValidator()
         validate(path)
         path = path.replace("http:/", "http://")
+        path = path.replace("https:/", "http://")
         path = path.replace("///", "//")
         if "followers" in path or "following" in path:
             parts = (path + "/").split("/")
