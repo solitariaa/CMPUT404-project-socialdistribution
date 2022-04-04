@@ -47,14 +47,15 @@ class FollowersTests(APITestCase):
         self.follower = create_Follower( self.testuser.author, self.user.author)
         self.following = create_Following( self.testuser.author, self.user.author)
     
-    # def test_get_followers (self):
-    #     publicUrl = f"/api/authors/{self.user.author.local_id}/followers/"
-    #     self.client.force_authenticate(user=self.user)
-    #     publicResponse = self.client.get(publicUrl)
-    #     print (publicResponse)
 
-    # def test_get_following (self):
-    #     publicUrl = f"/api/authors/{self.user.author.local_id}/following/"
-    #     self.client.force_authenticate(user=self.user)
-    #     publicResponse = self.client.get(publicUrl)
-        # print (publicResponse)
+    def test_get_followers (self):
+        publicUrl = f"/api/authors/{self.user.author.id}/followers/"
+        self.client.force_authenticate(user=self.user)
+        publicResponse = self.client.get(publicUrl)
+        print (publicResponse)
+
+    def test_get_following (self):
+        publicUrl = f"/api/authors/{self.user.author.id}/following/"
+        self.client.force_authenticate(user=self.user)
+        publicResponse = self.client.get(publicUrl)
+        print (publicResponse)

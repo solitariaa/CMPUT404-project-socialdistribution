@@ -42,7 +42,7 @@ class NotificationTests(APITestCase):
 
 
     def test_get_notifications(self):
-        """ Ensure we can create a new account object. """
+        """ Ensure we can create a new notification object. """
         retrievedUrl = f"/api/authors/{self.followed_user.author.local_id}/notifications/"
         self.client.force_authenticate(user=self.user)
         publicResponse = self.client.get(retrievedUrl)

@@ -48,7 +48,7 @@ class PostsTests(APITestCase):
         self.friend_post = create_friend_post(self.user.author)
 
     def test_get_post(self):
-        """ Ensure we can create a new account object. """
+        """ Ensure we can create a new post object. """
         publicUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.public_post.local_id}/"
         friendUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.friend_post.local_id}/"
         self.client.force_authenticate(user=self.user)
@@ -58,7 +58,7 @@ class PostsTests(APITestCase):
         self.assertEqual(publicResponse.status_code, status.HTTP_200_OK)
 
     def test_put_post(self):
-        """ Ensure we can create a new account object. """
+        """ Ensure we can create a new post object. """
         publicUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.public_post.local_id}/"
         friendUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.friend_post.local_id}/"
         self.client.force_authenticate(user=self.user)
@@ -77,7 +77,7 @@ class PostsTests(APITestCase):
 
 
     def test_delete_post(self):
-        """ Ensure we can create a new account object. """
+        """ Ensure we can create a new post object. """
         publicUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.public_post.local_id}/"
         friendUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.friend_post.local_id}/"
         self.client.force_authenticate(user=self.user)

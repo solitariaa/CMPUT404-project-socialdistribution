@@ -67,7 +67,7 @@ class LikesTests(APITestCase):
         self.public_comment_likes = create_public_comment_like(self.public_post_comments)
 
     def test_get_like(self):
-        """ Ensure we can create a new account object. """
+        """ Ensure we can create a new likes object. """
         publicUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.public_post.local_id}/likes/"
         self.client.force_authenticate(user=self.user)
         publicResponse = self.client.get(publicUrl)
@@ -80,7 +80,7 @@ class LikesTests(APITestCase):
         self.assertEqual(publicResponse.status_code, status.HTTP_200_OK)
 
     def test_get_commentLike(self):
-        """ Ensure we can create a new account object. """
+        """ Ensure we can create a new likes object. """
         publicUrl = f"/api/authors/{self.user.author.local_id}/posts/{self.public_post.local_id}/comments/{self.public_post_comments.local_id}/likes/"
         self.client.force_authenticate(user=self.user)
         publicResponse = self.client.get(publicUrl)
